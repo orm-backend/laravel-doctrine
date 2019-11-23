@@ -1,0 +1,22 @@
+{
+    "name": "it-aces/laravel-doctrine",
+    "description": "Support for Doctrine integration",
+    "license": "MIT",
+    "keywords": ["it-aces", "laravel-doctrine", "laravel", "doctrine"],
+    "authors": [
+        {
+            "name": "Vitaliy Kovalenko",
+            "email": "vvk@kola.cloud"
+        }
+    ],
+    "require": {
+    	"php": "^7.1",
+    	"laravel/framework": "^6.0",
+    	"laravel-doctrine/orm": "^1.5"
+    },
+    "require-dev": {
+    },
+    "autoload": {
+        "psr-4": { "ItAces\\": "src/ItAces" }
+    }
+}
