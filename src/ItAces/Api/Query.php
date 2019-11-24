@@ -3,7 +3,7 @@
 namespace ItAces\Api;
 
 use Carbon\Carbon;
-use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query\Parameter;
@@ -129,16 +129,8 @@ class Query
         
         // WHERE
         if ($this->filter) {
-            if (Arr::isAssoc($this->filter)) {
-                $composite = $this->buildCriteria($this->filter);
-                $this->qb->where($composite);
-            } else {
-                $this->qb->where(
-                    $this->qb->expr()->andX()->addMultiple(
-                        $this->buildComparisons($this->filter)
-                        )
-                    );
-            }
+            $composite = $this->buildCriteria($this->filter);
+            $this->qb->where($composite);
         }
         
         // JOIN
@@ -365,23 +357,41 @@ class Query
      */
     protected function buildCriteria(array $criteriaData) : Composite
     {
-        if (!$criteriaData || !is_array($criteriaData) || !Arr::isAssoc($criteriaData)) {
-            throw new DevelopmentException('The passed argument must be an associative array.');
+        if (!$criteriaData || Arr::isAssoc($criteriaData)) {
+            throw new DevelopmentException('The passed argument must be a numeric array.');
         }
         
         $composite = $this->qb->expr()->andX();
-        $andOr = key($criteriaData);
-        $operand = strtolower($andOr);
         
-        if ($operand == 'or') {
-            $composite = $this->qb->expr()->orX();
-        } else if ($operand != 'and') {
-            throw new DevelopmentException('The logic operand must be one of: AND, OR.');
+        if (is_string($criteriaData[0])) {
+            if (strtolower($criteriaData[0]) == 'or') {
+                $composite = $this->qb->expr()->orX();
+            }
+            
+            array_shift($criteriaData);
         }
         
-        $comparisons = $this->buildComparisons($criteriaData[$andOr]);
+        $comparisons = $this->buildComparisons($criteriaData);
         
         return $composite->addMultiple($comparisons);
+    }
+    
+    /**
+     * 
+     * @param array $comparisonOrCriteria
+     * @return bool
+     */
+    protected function isCriteria(array $comparisonOrCriteria) : bool
+    {
+        if (is_string($comparisonOrCriteria[0])) {
+            $operand = strtolower($comparisonOrCriteria[0]);
+            
+            if ($operand == 'or' || $operand == 'and') {
+                return true;
+            }
+        }
+        
+        return is_array($comparisonOrCriteria[0]);
     }
     
     /**
@@ -392,17 +402,17 @@ class Query
      */
     protected function buildComparisons(array $comparisonsData) : array
     {
-        if (!$comparisonsData || !is_array($comparisonsData)) {
+        if (!$comparisonsData) {
             throw new DevelopmentException('The passed argument must be an array.');
         }
         
         $comparisons = [];
         
-        foreach ($comparisonsData as $criteriaOrComparison) {
-            if (Arr::isAssoc($criteriaOrComparison)) {
-                $comparisons[] = $this->buildCriteria($criteriaOrComparison);
+        foreach ($comparisonsData as $comparisonOrCriteria) {
+            if ($this->isCriteria($comparisonOrCriteria)) {
+                $comparisons[] = $this->buildCriteria($comparisonOrCriteria);
             } else {
-                $comparisons[] = $this->buildComparison($criteriaOrComparison);
+                $comparisons[] = $this->buildComparison($comparisonOrCriteria);
             }
         }
         
@@ -480,10 +490,10 @@ class Query
     /**
      * 
      * @param string $column
-     * @param string $value
+     * @param string|array $value
      * @return string
      */
-    protected function buildQueryParameterName(string $column, string $value) : string
+    protected function buildQueryParameterName(string $column, $value) : string
     {
         $this->index ++;
         $parameter = $this->index;
@@ -501,32 +511,36 @@ class Query
      *
      * @param string $column
      * @param integer|string $name
-     * @param string $value
+     * @param string $value|array
      * @return Parameter
      */
-    protected function buildQueryParameter(string $column, $name, string $value) : Parameter
+    protected function buildQueryParameter(string $column, $name, $value) : Parameter
     {
+        if (is_array($value)) {
+            return new Parameter($name, $value, Types::SIMPLE_ARRAY);
+        }
+        
         if ($this->useStrongTyping) {
             //dd( \Doctrine\DBAL\Types\Type::getTypesMap());
             $type = $this->getFieldType($column);
-            $parameterType = ParameterType::STRING;
             
             switch ($type) {
-                case 'integer':
-                case 'smallint':
-                case 'time':
+                case Types::INTEGER:
+                case Types::SMALLINT:
+                case Types::TIME_MUTABLE:
                     $value = (int) $value;
-                    $parameterType = ParameterType::INTEGER;
                     break;
-                case 'float':
+                case Types::FLOAT:
+                case Types::DECIMAL:
                     $value = (float) $value;
                     break;
-                case 'boolean':
+                case Types::BOOLEAN:
                     $value = (boolean) $value;
-                    $parameterType = ParameterType::BOOLEAN;
                     break;
-                case 'date':
-                case 'datetime':
+                case Types::DATE_MUTABLE:
+                    $parameterType = Types::DATE_MUTABLE;
+                case Types::DATETIME_MUTABLE:
+                    $parameterType = Types::DATETIME_MUTABLE;
                     $timeZone = null;
                     
                     if (auth()->user() && method_exists(auth()->user(), 'getTimezone')) {
@@ -538,7 +552,7 @@ class Query
             }
         }
         
-        return new Parameter($name, $value, $parameterType);
+        return new Parameter($name, $value, $type);
     }
     
 }
