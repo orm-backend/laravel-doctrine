@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\Query\Expr\Composite;
+use Doctrine\ORM\Query\Expr\OrderBy;
 use Illuminate\Support\Arr;
 
 /**
@@ -65,6 +66,12 @@ class Query
     
     /**
      *
+     * @var array
+     */
+    protected $order;
+    
+    /**
+     *
      * @var string
      */
     protected $alias;
@@ -77,19 +84,25 @@ class Query
     
     /**
      *
+     * @var boolean
+     */
+    protected $useStrongTyping = true;
+    
+    /**
+     *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
-     * @param array $select
-     * @param array $filter
+     * @param array $parameters
      * @return \ItAces\Api\Query
      */
-    public static function fromArray(EntityManager $em, string $class, array $select, array $filter) : Query
+    public static function fromArray(EntityManager $em, string $class, array $parameters) : Query
     {
         $instance = new static();
         $instance->alias = lcfirst( (new \ReflectionClass($class))->getShortName() );
         $instance->qb = $em->createQueryBuilder()->from($class, $instance->alias);
-        $instance->select = $select;
-        $instance->filter = $filter;
+        $instance->select = array_key_exists('select', $parameters) ? $parameters['select'] : [];
+        $instance->filter = array_key_exists('filter', $parameters) ? $parameters['filter'] : [];
+        $instance->order = array_key_exists('order', $parameters) ? $parameters['order'] : [];
         $instance->class = $class;
         
         return $instance;
@@ -102,6 +115,7 @@ class Query
     public function createQueryBuilder() : QueryBuilder
     {
         foreach ($this->select as $i => $field) {
+            $this->validateFieldForSelect($field);
             $this->select[$field] = $this->fieldToAlias($field);
             unset($this->select[$i]);
             
@@ -136,9 +150,33 @@ class Query
             $this->qb->setParameter($parameter->getName(), $parameter->getValue(), $parameter->getType());
         }
         
+        foreach ($this->order as $column) {
+            $this->validateFieldForOrder($column);
+            $field = $this->columnToAlias($column);
+            $order = $this->buildOrder($field);
+            $this->qb->addOrderBy($order);
+        }
+        
         //dd($this->qb->getQuery()->getDQL());
         
         return $this->qb;
+    }
+    
+    /**
+     * 
+     * @param string $field
+     * @return OrderBy
+     */
+    protected function buildOrder(string $field) : OrderBy
+    {
+        $operator = 'asc';
+        
+        if (strpos($field, '-') === 0) {
+            $operator = 'desc';
+            $field = substr($field, 1);
+        }
+        
+        return call_user_func_array([$this->qb->expr(), $operator], [$field]);
     }
     
     /**
@@ -154,7 +192,81 @@ class Query
     /**
      *
      * @param string $fieldDotedName
-     * @throws \InvalidArgumentException
+     * @throws \ItAces\Api\DevelopmentException
+     */
+    protected function validateFieldForOrder(string $fieldDotedName)
+    {
+        if (strpos($fieldDotedName, '-') === 0) {
+            $fieldDotedName = substr($fieldDotedName, 1);
+        }
+        
+        $targetEntity = $this->class;
+        $pieces = explode('.', $fieldDotedName);
+        
+        if ($pieces[0] != $this->alias) {
+            throw new DevelopmentException("Unknown entity alias '{$pieces[0]}' in '{$fieldDotedName}'.");
+        }
+        
+        $targetField = null;
+        $index = 0;
+        
+        while ($index < count($pieces) - 1) {
+            $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
+            $targetField = $pieces[$index + 1];
+            $index ++;
+            
+            if (array_key_exists($targetField, $classMetadata->associationMappings)) {
+                $fieldMetadata = $classMetadata->associationMappings[$targetField];
+                $targetEntity = $fieldMetadata['targetEntity'];
+                continue;
+            }
+            
+            if (!array_key_exists($targetField, $classMetadata->fieldMappings)) {
+                throw new DevelopmentException("Unknown entity filed '{$targetField}' in order '{$fieldDotedName}'.");
+            }
+        }
+    }
+    
+    /**
+     * 
+     * @param string $fieldDotedName
+     * @throws \ItAces\Api\DevelopmentException
+     */
+    protected function validateFieldForSelect(string $fieldDotedName)
+    {
+        $targetEntity = $this->class;
+        $pieces = explode('.', $fieldDotedName);
+        
+        if ($pieces[0] != $this->alias) {
+            throw new DevelopmentException("Unknown entity alias '{$pieces[0]}' in '{$fieldDotedName}'.");
+        }
+        
+        $targetField = null;
+        $index = 0;
+        
+        while ($index < count($pieces) - 1) {
+            $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
+            $targetField = $pieces[$index + 1];
+            $index ++;
+            
+            if (array_key_exists($targetField, $classMetadata->associationMappings)) {
+                $fieldMetadata = $classMetadata->associationMappings[$targetField];
+                $targetEntity = $fieldMetadata['targetEntity'];
+                continue;
+            }
+            
+            if (array_key_exists($targetField, $classMetadata->fieldMappings)) {
+                throw new DevelopmentException("Separate entity fields cannot be specified in a select.");
+            }
+            
+            throw new DevelopmentException("Unknown entity reference '{$targetField}' in '{$fieldDotedName}'.");
+        }
+    }
+    
+    /**
+     *
+     * @param string $fieldDotedName
+     * @throws \ItAces\Api\DevelopmentException
      * @return string
      */
     protected function getFieldType(string $fieldDotedName) : string
@@ -163,25 +275,36 @@ class Query
         $pieces = explode('.', $fieldDotedName);
         
         if (count($pieces) < 2) {
-            throw new \InvalidArgumentException('The passed field name must contain a dot.');
+            throw new DevelopmentException("The passed field '{$fieldDotedName}' name must contain a dot.");
+        }
+        
+        if ($pieces[0] != $this->alias) {
+            throw new DevelopmentException("Unknown entity alias '{$pieces[0]}' in '{$fieldDotedName}'.");
         }
         
         $targetField = null;
         $index = 0;
         
         while ($index < count($pieces) - 1) {
-            $targetField = $pieces[$index + 1];
             $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
+            $targetField = $pieces[$index + 1];
             
             if (array_key_exists($targetField, $classMetadata->associationMappings)) {
                 $fieldMetadata = $classMetadata->associationMappings[$targetField];
                 $targetEntity = $fieldMetadata['targetEntity'];
+            } else if (! array_key_exists($targetField, $classMetadata->fieldMappings)) {
+                throw new DevelopmentException("Unknown reference '{$targetField}' in '{$fieldDotedName}'.");
             }
             
             $index ++;
         }
         
         $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
+        
+        if (! array_key_exists($targetField, $classMetadata->fieldMappings)) {
+            throw new DevelopmentException("Unknown field '{$targetField}' in '{$fieldDotedName}'.");
+        }
+        
         $fieldMetadata = $classMetadata->fieldMappings[$targetField];
         
         return $fieldMetadata['type'];
@@ -220,7 +343,7 @@ class Query
     /**
      *
      * @param string $column
-     * @throws \InvalidArgumentException
+     * @throws \ItAces\Api\DevelopmentException
      * @return string
      */
     protected function columnToField(string $column) : string
@@ -228,7 +351,7 @@ class Query
         $position = strrpos($column, '.');
         
         if (!$position) {
-            throw new \InvalidArgumentException("Invalid column name {$column}.");
+            throw new DevelopmentException("Invalid column name '{$column}'.");
         }
         
         return substr($column, 0, $position);
@@ -237,13 +360,13 @@ class Query
     /**
      *
      * @param array $criteriaData
-     * @throws \InvalidArgumentException
+     * @throws \ItAces\Api\DevelopmentException
      * @return \Doctrine\ORM\Query\Expr\Composite
      */
     protected function buildCriteria(array $criteriaData) : Composite
     {
         if (!$criteriaData || !is_array($criteriaData) || !Arr::isAssoc($criteriaData)) {
-            throw new \InvalidArgumentException('The passed argument must be an associative array.');
+            throw new DevelopmentException('The passed argument must be an associative array.');
         }
         
         $composite = $this->qb->expr()->andX();
@@ -253,7 +376,7 @@ class Query
         if ($operand == 'or') {
             $composite = $this->qb->expr()->orX();
         } else if ($operand != 'and') {
-            throw new \InvalidArgumentException('The logic operand must be one of: AND, OR.');
+            throw new DevelopmentException('The logic operand must be one of: AND, OR.');
         }
         
         $comparisons = $this->buildComparisons($criteriaData[$andOr]);
@@ -264,13 +387,13 @@ class Query
     /**
      *
      * @param array $comparisonsData
-     * @throws \InvalidArgumentException
+     * @throws \ItAces\Api\DevelopmentException
      * @return \Doctrine\ORM\Query\Expr\Comparison[]
      */
     protected function buildComparisons(array $comparisonsData) : array
     {
         if (!$comparisonsData || !is_array($comparisonsData)) {
-            throw new \InvalidArgumentException('The passed argument must be an array.');
+            throw new DevelopmentException('The passed argument must be an array.');
         }
         
         $comparisons = [];
@@ -289,7 +412,7 @@ class Query
     /**
      *
      * @param array $comparisonData
-     * @throws \InvalidArgumentException
+     * @throws \ItAces\Api\DevelopmentException
      * @return \Doctrine\ORM\Query\Expr\Comparison|string
      */
     protected function buildComparison(array $comparisonData)
@@ -302,17 +425,34 @@ class Query
         
         if ($length == 2) {
             list($column, $operator) = $comparisonData;
+            
+            if ($operator != 'isNull' && $operator != 'isNotNull') {
+                throw new DevelopmentException("Permitted not to specify a value with operators 'isNull' or 'isNotNull' only.");
+            }
         } else if ($length == 3) {
             list($column, $operator, $value) = $comparisonData;
+            
+            if ($operator == 'isNull' || $operator == 'isNotNull') {
+                throw new DevelopmentException("Not permitted to specify a value with operators 'isNull' or 'isNotNull'.");
+            } else if ($operator == 'between') {
+                throw new DevelopmentException("Must be a second value with operator 'between'.");
+            } else if ($operator == 'in' && (!is_array($value) || Arr::isAssoc($value))) {
+                throw new DevelopmentException("The value must be a numeric array with operator 'in'.");
+            }
         } else if ($length == 4) {
             list($column, $operator, $value, $adonceValue) = $comparisonData;
+            
+            if ($operator != 'between') {
+                throw new DevelopmentException("Only operator 'between' permitted to use with two values.");
+            }
         } else {
-            throw new \InvalidArgumentException('Incompatible filter format.');
+            throw new DevelopmentException('Incompatible filter format.');
         }
         
         
         if (!in_array($operator, self::SUPPORTED)) {
-            throw new \InvalidArgumentException('Unsupported operator.');
+            $supportedOperators = implode(', ', self::SUPPORTED);
+            throw new DevelopmentException("Unsupported operator '{$operator}'. Allowed operators: {$supportedOperators}.");
         }
         
         $field = $this->columnToField($column);
@@ -366,34 +506,36 @@ class Query
      */
     protected function buildQueryParameter(string $column, $name, string $value) : Parameter
     {
-        //dd( \Doctrine\DBAL\Types\Type::getTypesMap());
-        $type = $this->getFieldType($column);
-        $parameterType = ParameterType::STRING;
-        
-        switch ($type) {
-            case 'integer':
-            case 'smallint':
-            case 'time':
-                $value = (int) $value;
-                $parameterType = ParameterType::INTEGER;
-                break;
-            case 'float':
-                $value = (float) $value;
-                break;
-            case 'boolean':
-                $value = (boolean) $value;
-                $parameterType = ParameterType::BOOLEAN;
-                break;
-            case 'date':
-            case 'datetime':
-                $timeZone = null;
-                
-                if (auth()->user() && method_exists(auth()->user(), 'getTimezone')) {
-                    $timeZone = auth()->user()->getTimezone();
-                }
-                
-                $value = Carbon::parse($value, $timeZone);
-                break;
+        if ($this->useStrongTyping) {
+            //dd( \Doctrine\DBAL\Types\Type::getTypesMap());
+            $type = $this->getFieldType($column);
+            $parameterType = ParameterType::STRING;
+            
+            switch ($type) {
+                case 'integer':
+                case 'smallint':
+                case 'time':
+                    $value = (int) $value;
+                    $parameterType = ParameterType::INTEGER;
+                    break;
+                case 'float':
+                    $value = (float) $value;
+                    break;
+                case 'boolean':
+                    $value = (boolean) $value;
+                    $parameterType = ParameterType::BOOLEAN;
+                    break;
+                case 'date':
+                case 'datetime':
+                    $timeZone = null;
+                    
+                    if (auth()->user() && method_exists(auth()->user(), 'getTimezone')) {
+                        $timeZone = auth()->user()->getTimezone();
+                    }
+                    
+                    $value = Carbon::parse($value, $timeZone);
+                    break;
+            }
         }
         
         return new Parameter($name, $value, $parameterType);

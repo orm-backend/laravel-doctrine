@@ -64,13 +64,12 @@ abstract class Repository
     /**
      * 
      * @param string $class
-     * @param array $select
-     * @param array $filter
+     * @param array $parameters
      * @return \Doctrine\ORM\QueryBuilder
      */
-    protected function createQueryBuilder(string $class, array $select, array $filter) : QueryBuilder
+    protected function createQueryBuilder(string $class, array $parameters) : QueryBuilder
     {
-        return Query::fromArray($this->em, $class, $select, $filter)->createQueryBuilder();
+        return Query::fromArray($this->em, $class, $parameters)->createQueryBuilder();
     }
     
 }
