@@ -2,10 +2,14 @@
 
 namespace ItAces\Filters;
 
-
 use Doctrine\ORM\Mapping\ClassMetaData;
 use Doctrine\ORM\Query\Filter\SQLFilter;
 
+/**
+ * 
+ * @author Vitaliy Kovalenko vvk@kola.cloud
+ *
+ */
 class SoftDeleteFilter extends SQLFilter
 {
     

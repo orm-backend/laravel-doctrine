@@ -1,6 +1,6 @@
 <?php
 
-namespace ItAces\Api;
+namespace ItAces\ORM;
 
 use Carbon\Carbon;
 use Doctrine\DBAL\Types\Types;
@@ -93,7 +93,7 @@ class Query
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
      * @param array $parameters
-     * @return \ItAces\Api\Query
+     * @return \ItAces\ORM\Query
      */
     public static function fromArray(EntityManager $em, string $class, array $parameters) : Query
     {
@@ -149,7 +149,7 @@ class Query
             $this->qb->addOrderBy($order);
         }
         
-        //dd($this->qb->getQuery()->getDQL());
+        //dd($this->qb->getQuery()->getDQL(), end($this->parameters));
         
         return $this->qb;
     }
@@ -184,7 +184,7 @@ class Query
     /**
      *
      * @param string $fieldDotedName
-     * @throws \ItAces\Api\DevelopmentException
+     * @throws \ItAces\ORM\DevelopmentException
      */
     protected function validateFieldForOrder(string $fieldDotedName)
     {
@@ -222,7 +222,7 @@ class Query
     /**
      * 
      * @param string $fieldDotedName
-     * @throws \ItAces\Api\DevelopmentException
+     * @throws \ItAces\ORM\DevelopmentException
      */
     protected function validateFieldForSelect(string $fieldDotedName)
     {
@@ -258,7 +258,7 @@ class Query
     /**
      *
      * @param string $fieldDotedName
-     * @throws \ItAces\Api\DevelopmentException
+     * @throws \ItAces\ORM\DevelopmentException
      * @return string
      */
     protected function getFieldType(string $fieldDotedName) : string
@@ -335,7 +335,7 @@ class Query
     /**
      *
      * @param string $column
-     * @throws \ItAces\Api\DevelopmentException
+     * @throws \ItAces\ORM\DevelopmentException
      * @return string
      */
     protected function columnToField(string $column) : string
@@ -352,7 +352,7 @@ class Query
     /**
      *
      * @param array $criteriaData
-     * @throws \ItAces\Api\DevelopmentException
+     * @throws \ItAces\ORM\DevelopmentException
      * @return \Doctrine\ORM\Query\Expr\Composite
      */
     protected function buildCriteria(array $criteriaData) : Composite
@@ -397,7 +397,7 @@ class Query
     /**
      *
      * @param array $comparisonsData
-     * @throws \ItAces\Api\DevelopmentException
+     * @throws \ItAces\ORM\DevelopmentException
      * @return \Doctrine\ORM\Query\Expr\Comparison[]
      */
     protected function buildComparisons(array $comparisonsData) : array
@@ -422,7 +422,7 @@ class Query
     /**
      *
      * @param array $comparisonData
-     * @throws \ItAces\Api\DevelopmentException
+     * @throws \ItAces\ORM\DevelopmentException
      * @return \Doctrine\ORM\Query\Expr\Comparison|string
      */
     protected function buildComparison(array $comparisonData)
@@ -517,7 +517,38 @@ class Query
     protected function buildQueryParameter(string $column, $name, $value) : Parameter
     {
         if (is_array($value)) {
-            return new Parameter($name, $value, Types::SIMPLE_ARRAY);
+            if (!$value) {
+                throw new DevelopmentException("The value for field '{$column}' could not be an empty array.");
+            }
+            
+            $integerTypes = [Types::INTEGER, Types::SMALLINT, Types::BIGINT];
+            $stringTypes = [Types::STRING];
+            $mappingTypes = implode(', ', array_merge($integerTypes, $stringTypes));
+            $valueTypes = implode(', ', [Types::INTEGER, Types::STRING]);
+            $fieldType = $this->getFieldType($column);
+            $connectionType = \Doctrine\DBAL\Connection::PARAM_INT_ARRAY;
+            
+            switch ($fieldType) {
+                case Types::BIGINT:
+                case Types::INTEGER:
+                case Types::SMALLINT:
+                    break;
+                case Types::STRING:
+                    $connectionType = \Doctrine\DBAL\Connection::PARAM_STR_ARRAY;
+                    break;
+                default:
+                    throw new DevelopmentException("Unsupported type found for field '{$column}'. It is allowed to use the IN operator only for types: '{$supportedTypes}'.");
+                    break;
+            }
+            
+            array_map(function($element) use($integerTypes, $stringTypes, $column, $fieldType, $valueTypes) {
+                if ((in_array($element, $integerTypes) && !is_int($element)) || (in_array($element, $stringTypes) && !is_string($element))) {
+                    $wrongType = gettype($element);
+                    throw new DevelopmentException("Found the array element with type '{$wrongType}' that does not match type '{$fieldType}' for field '{$column}'. Valid types for array elements are: '{$valueTypes}'.");
+                }
+            }, $value);
+            
+            return new Parameter($name, $value,  $connectionType);
         }
         
         if ($this->useStrongTyping) {
@@ -525,9 +556,9 @@ class Query
             $type = $this->getFieldType($column);
             
             switch ($type) {
+                case Types::BIGINT:
                 case Types::INTEGER:
                 case Types::SMALLINT:
-                case Types::TIME_MUTABLE:
                     $value = (int) $value;
                     break;
                 case Types::FLOAT:
@@ -538,12 +569,12 @@ class Query
                     $value = (boolean) $value;
                     break;
                 case Types::DATE_MUTABLE:
-                    $parameterType = Types::DATE_MUTABLE;
                 case Types::DATETIME_MUTABLE:
-                    $parameterType = Types::DATETIME_MUTABLE;
+                case Types::DATETIMETZ_MUTABLE:
+                //case Types::TIME_MUTABLE: TODO
                     $timeZone = null;
                     
-                    if (auth()->user() && method_exists(auth()->user(), 'getTimezone')) {
+                    if (auth()->id() && method_exists(auth()->user(), 'getTimezone')) {
                         $timeZone = auth()->user()->getTimezone();
                     }
                     

@@ -5,6 +5,11 @@ use ItAces\SoftDeleteable;
 use Doctrine\ORM\Event\PreFlushEventArgs;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * 
+ * @author Vitaliy Kovalenko vvk@kola.cloud
+ *
+ */
 class DoctrineListener
 {
     public function preFlush(PreFlushEventArgs $event) {

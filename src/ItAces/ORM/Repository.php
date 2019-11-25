@@ -1,6 +1,6 @@
 <?php
 
-namespace ItAces\Api;
+namespace ItAces\ORM;
 
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\QueryBuilder;

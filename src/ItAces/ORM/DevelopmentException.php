@@ -1,10 +1,15 @@
 <?php
 
-namespace ItAces\Api;
+namespace ItAces\ORM;
 
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Exception;
 
+/**
+ * 
+ * @author Vitaliy Kovalenko vvk@kola.cloud
+ *
+ */
 class DevelopmentException extends Exception implements HttpExceptionInterface
 {
     

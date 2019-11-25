@@ -4,6 +4,11 @@ namespace ItAces\Traits;
 
 use Illuminate\Auth\Notifications;
 
+/**
+ * 
+ * @author Vitaliy Kovalenko vvk@kola.cloud
+ *
+ */
 trait MustVerifyEmail
 {
     /**

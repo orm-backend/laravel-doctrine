@@ -5,6 +5,11 @@ namespace ItAces\Traits;
 use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Support\Str;
 
+/**
+ * 
+ * @author Vitaliy Kovalenko vvk@kola.cloud
+ *
+ */
 trait RoutesNotifications
 {
     /**

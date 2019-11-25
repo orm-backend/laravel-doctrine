@@ -2,6 +2,11 @@
 
 namespace ItAces\Traits;
 
+/**
+ * 
+ * @author Vitaliy Kovalenko vvk@kola.cloud
+ *
+ */
 trait Notifiable
 {
     use HasDatabaseNotifications, RoutesNotifications;
