@@ -2,8 +2,7 @@
 
 namespace ItAces\ORM;
 
-use Carbon\Carbon;
-use Doctrine\DBAL\Types\Types;
+
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query\Parameter;
@@ -18,10 +17,7 @@ use Illuminate\Support\Arr;
  */
 class Query
 {
-    const SUPPORTED = [
-        'eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'isNull', 'isNotNull', 'like', 'notLike', 'in', 'notIn', 'between'
-    ];
-    
+
     /**
      *
      * @var \Doctrine\ORM\QueryBuilder
@@ -29,16 +25,22 @@ class Query
     protected $qb;
     
     /**
-     *
-     * @var string
+     * 
+     * @var \ItAces\ORM\QueryHelper
      */
-    protected $class;
+    protected $helper;
     
     /**
-     *
-     * @var integer
+     * 
+     * @var \ItAces\ORM\QueryValidator
      */
-    protected $index = 0;
+    protected $validator;
+    
+    /**
+     * 
+     * @var \ItAces\ORM\ParameterBuilder
+     */
+    protected $builder;
     
     /**
      *
@@ -50,7 +52,7 @@ class Query
      *
      * @var array
      */
-    protected $joins = [];
+    protected $join;
     
     /**
      *
@@ -75,35 +77,32 @@ class Query
      * @var string
      */
     protected $alias;
-    
-    /**
-     * 
-     * @var boolean
-     */
-    protected $useNamedParameters = true;
-    
-    /**
-     *
-     * @var boolean
-     */
-    protected $useStrongTyping = true;
-    
+
     /**
      *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
      * @param array $parameters
+     * @param string $alias
      * @return \ItAces\ORM\Query
      */
-    public static function fromArray(EntityManager $em, string $class, array $parameters) : Query
+    public static function fromArray(EntityManager $em, string $class, array $parameters = [], string $alias = null) : Query
     {
         $instance = new static();
-        $instance->alias = lcfirst( (new \ReflectionClass($class))->getShortName() );
+        $instance->alias = $alias ? $alias : lcfirst( (new \ReflectionClass($class))->getShortName() );
         $instance->qb = $em->createQueryBuilder()->from($class, $instance->alias);
         $instance->select = array_key_exists('select', $parameters) ? $parameters['select'] : [];
+        $instance->join = array_key_exists('join', $parameters) ? $parameters['join'] : [];
         $instance->filter = array_key_exists('filter', $parameters) ? $parameters['filter'] : [];
         $instance->order = array_key_exists('order', $parameters) ? $parameters['order'] : [];
-        $instance->class = $class;
+        
+        if (!in_array($instance->alias, $instance->select)) {
+            $instance->select[] = $instance->alias;
+        }
+        
+        $instance->helper = new QueryHelper();
+        $instance->validator = new QueryValidator($instance->qb, $instance->helper, $instance->alias, $class);
+        $instance->builder = new ParameterBuilder($instance->qb, $instance->helper, $instance->alias, $class);
         
         return $instance;
     }
@@ -114,18 +113,16 @@ class Query
      */
     public function createQueryBuilder() : QueryBuilder
     {
-        foreach ($this->select as $i => $field) {
-            $this->validateFieldForSelect($field);
-            $this->select[$field] = $this->fieldToAlias($field);
-            unset($this->select[$i]);
-            
-            if ($field != $this->alias) {
-                $this->joins[$field] = $this->select[$field];
-            }
-        }
-        
+        $this->join = $this->buildAliasesFor($this->join);
+        $this->select = $this->buildAliasesFor($this->select);
+
         // SELECT
-        call_user_func_array([$this->qb, 'select'], array_values($this->select));
+        $this->qb->select($this->alias);
+        
+        foreach ($this->select as $reference => $alias) {
+            $this->qb->addSelect($alias);
+            $this->addJoinIfNeed($reference, $alias);
+        }
         
         // WHERE
         if ($this->filter) {
@@ -134,18 +131,18 @@ class Query
         }
         
         // JOIN
-        foreach ($this->joins as $join => $alias) {
-            $this->qb->leftJoin($join, $alias);
+        foreach ($this->join as $reference => $alias) {
+            $this->qb->leftJoin($reference, $alias);
         }
 
-        foreach ($this->parameters as $parameter) {
+        foreach ($this->builder->getParameters() as $parameter) {
             $this->qb->setParameter($parameter->getName(), $parameter->getValue(), $parameter->getType());
         }
         
-        foreach ($this->order as $column) {
-            $this->validateFieldForOrder($column);
-            $field = $this->columnToAlias($column);
-            $order = $this->buildOrder($field);
+        foreach ($this->order as $field) {
+            $this->validator->validateFieldForOrder($field);
+            $alias = $this->helper->fieldToAlias($field);
+            $order = $this->buildOrder($alias);
             $this->qb->addOrderBy($order);
         }
         
@@ -156,197 +153,65 @@ class Query
     
     /**
      * 
-     * @param string $field
-     * @return OrderBy
+     * @param string $referenceOrAlias
+     * @param string $alias
      */
-    protected function buildOrder(string $field) : OrderBy
+    protected function addJoinIfNeed(string $referenceOrAlias, string $alias)
     {
-        $operator = 'asc';
-        
-        if (strpos($field, '-') === 0) {
-            $operator = 'desc';
-            $field = substr($field, 1);
+        if ($this->helper->isAlias($referenceOrAlias)) {
+            return;
         }
         
-        return call_user_func_array([$this->qb->expr(), $operator], [$field]);
-    }
-    
-    /**
-     *
-     * @param string $field
-     * @return string
-     */
-    protected function fieldToAlias(string $field) : string
-    {
-        return str_replace('.', '_', $field);
-    }
-    
-    /**
-     *
-     * @param string $fieldDotedName
-     * @throws \ItAces\ORM\DevelopmentException
-     */
-    protected function validateFieldForOrder(string $fieldDotedName)
-    {
-        if (strpos($fieldDotedName, '-') === 0) {
-            $fieldDotedName = substr($fieldDotedName, 1);
-        }
-        
-        $targetEntity = $this->class;
-        $pieces = explode('.', $fieldDotedName);
-        
-        if ($pieces[0] != $this->alias) {
-            throw new DevelopmentException("Unknown entity alias '{$pieces[0]}' in '{$fieldDotedName}'.");
-        }
-        
-        $targetField = null;
-        $index = 0;
-        
-        while ($index < count($pieces) - 1) {
-            $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
-            $targetField = $pieces[$index + 1];
-            $index ++;
-            
-            if (array_key_exists($targetField, $classMetadata->associationMappings)) {
-                $fieldMetadata = $classMetadata->associationMappings[$targetField];
-                $targetEntity = $fieldMetadata['targetEntity'];
-                continue;
-            }
-            
-            if (!array_key_exists($targetField, $classMetadata->fieldMappings)) {
-                throw new DevelopmentException("Unknown entity filed '{$targetField}' in order '{$fieldDotedName}'.");
-            }
+        if ($referenceOrAlias != $this->alias && !array_key_exists($referenceOrAlias, $this->join)) {
+            $this->join[$referenceOrAlias] = $alias;
         }
     }
     
     /**
      * 
-     * @param string $fieldDotedName
-     * @throws \ItAces\ORM\DevelopmentException
+     * @param mixed[] $values
+     * @return mixed[]
      */
-    protected function validateFieldForSelect(string $fieldDotedName)
+    protected function buildAliasesFor(array $values)
     {
-        $targetEntity = $this->class;
-        $pieces = explode('.', $fieldDotedName);
+        $result = [];
         
-        if ($pieces[0] != $this->alias) {
-            throw new DevelopmentException("Unknown entity alias '{$pieces[0]}' in '{$fieldDotedName}'.");
-        }
-        
-        $targetField = null;
-        $index = 0;
-        
-        while ($index < count($pieces) - 1) {
-            $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
-            $targetField = $pieces[$index + 1];
-            $index ++;
-            
-            if (array_key_exists($targetField, $classMetadata->associationMappings)) {
-                $fieldMetadata = $classMetadata->associationMappings[$targetField];
-                $targetEntity = $fieldMetadata['targetEntity'];
+        foreach ($values as $key => $value) {
+            if ($value == $this->alias) {
                 continue;
             }
             
-            if (array_key_exists($targetField, $classMetadata->fieldMappings)) {
-                throw new DevelopmentException("Separate entity fields cannot be specified in a select.");
+            if (is_numeric($key)) {
+                $reference = $value;
+                $alias = $this->helper->referenceToAlias($reference);
+            } else {
+                $reference = $key;
+                $alias = $value; // explicitly specified
             }
             
-            throw new DevelopmentException("Unknown entity reference '{$targetField}' in '{$fieldDotedName}'.");
+            $result[$reference] = $alias;
+            $this->helper->addAlias($reference, $alias);
+            $this->validator->validateReferenceForSelect($reference);
         }
+        
+        return $result;
     }
     
     /**
-     *
-     * @param string $fieldDotedName
-     * @throws \ItAces\ORM\DevelopmentException
-     * @return string
+     * 
+     * @param string $alias
+     * @return OrderBy
      */
-    protected function getFieldType(string $fieldDotedName) : string
+    protected function buildOrder(string $alias) : OrderBy
     {
-        $targetEntity = $this->class;
-        $pieces = explode('.', $fieldDotedName);
+        $operator = 'asc';
         
-        if (count($pieces) < 2) {
-            throw new DevelopmentException("The passed field '{$fieldDotedName}' name must contain a dot.");
+        if (strpos($alias, '-') === 0) {
+            $operator = 'desc';
+            $alias = substr($alias, 1);
         }
         
-        if ($pieces[0] != $this->alias) {
-            throw new DevelopmentException("Unknown entity alias '{$pieces[0]}' in '{$fieldDotedName}'.");
-        }
-        
-        $targetField = null;
-        $index = 0;
-        
-        while ($index < count($pieces) - 1) {
-            $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
-            $targetField = $pieces[$index + 1];
-            
-            if (array_key_exists($targetField, $classMetadata->associationMappings)) {
-                $fieldMetadata = $classMetadata->associationMappings[$targetField];
-                $targetEntity = $fieldMetadata['targetEntity'];
-            } else if (! array_key_exists($targetField, $classMetadata->fieldMappings)) {
-                throw new DevelopmentException("Unknown reference '{$targetField}' in '{$fieldDotedName}'.");
-            }
-            
-            $index ++;
-        }
-        
-        $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
-        
-        if (! array_key_exists($targetField, $classMetadata->fieldMappings)) {
-            throw new DevelopmentException("Unknown field '{$targetField}' in '{$fieldDotedName}'.");
-        }
-        
-        $fieldMetadata = $classMetadata->fieldMappings[$targetField];
-        
-        return $fieldMetadata['type'];
-    }
-    
-    /**
-     *
-     * @param string $column
-     * @return string
-     */
-    protected function columnToAlias(string $column) : string
-    {
-        $position = strrpos($column, '.');
-        $field = substr($column, 0, $position);
-        $leftExpr = $this->fieldToAlias($field);
-        $rightExpr = substr($column, $position + 1);
-        
-        return $leftExpr.'.'.$rightExpr;
-    }
-    
-    /**
-     *
-     * @param string $column
-     * @return string
-     */
-    protected function columnToParameter(string $column) : string
-    {
-        $position = strrpos($column, '.');
-        $field = substr($column, 0, $position);
-        $leftExpr = $this->fieldToAlias($field);
-        $rightExpr = substr($column, $position + 1);
-        
-        return $rightExpr.$this->index;
-    }
-    
-    /**
-     *
-     * @param string $column
-     * @throws \ItAces\ORM\DevelopmentException
-     * @return string
-     */
-    protected function columnToField(string $column) : string
-    {
-        $position = strrpos($column, '.');
-        
-        if (!$position) {
-            throw new DevelopmentException("Invalid column name '{$column}'.");
-        }
-        
-        return substr($column, 0, $position);
+        return call_user_func_array([$this->qb->expr(), $operator], [$alias]);
     }
     
     /**
@@ -419,6 +284,8 @@ class Query
         return $comparisons;
     }
     
+    
+    
     /**
      *
      * @param array $comparisonData
@@ -427,163 +294,58 @@ class Query
      */
     protected function buildComparison(array $comparisonData)
     {
-        $column = null;
+        $field = null;
         $operator = null;
         $value = null;
         $adonceValue = null;
+        
+        $this->validator->validateComparisonData($comparisonData);
         $length = count($comparisonData);
-        
-        if ($length == 2) {
-            list($column, $operator) = $comparisonData;
+
+        if ($length == 1) {
+            /**
+             *
+             * @var \ItAces\DBAL\DQLExpression $expression
+             */
+//             [$expression] = $comparisonData;
+//             $placeholders = [];
             
-            if ($operator != 'isNull' && $operator != 'isNotNull') {
-                throw new DevelopmentException("Permitted not to specify a value with operators 'isNull' or 'isNotNull' only.");
-            }
+//             foreach ($expression->getValues() as $value) {
+//                 $this->index ++;
+//                 $parameterName = $this->useNamedParameters ? $expression->getName() . $this->index : $this->index;
+//                 $placeholders[] = ($this->useNamedParameters ? ':' : '?') . $parameterName;
+//                 $this->parameters[] = new Parameter( $parameterName, $value );
+//             }
+            
+//             return $expression->compile($placeholders);
+        } else if ($length == 2) {
+            [$field, $operator] = $comparisonData;
         } else if ($length == 3) {
-            list($column, $operator, $value) = $comparisonData;
-            
-            if ($operator == 'isNull' || $operator == 'isNotNull') {
-                throw new DevelopmentException("Not permitted to specify a value with operators 'isNull' or 'isNotNull'.");
-            } else if ($operator == 'between') {
-                throw new DevelopmentException("Must be a second value with operator 'between'.");
-            } else if ($operator == 'in' && (!is_array($value) || Arr::isAssoc($value))) {
-                throw new DevelopmentException("The value must be a numeric array with operator 'in'.");
-            }
+            [$field, $operator, $value] = $comparisonData;
         } else if ($length == 4) {
-            list($column, $operator, $value, $adonceValue) = $comparisonData;
-            
-            if ($operator != 'between') {
-                throw new DevelopmentException("Only operator 'between' permitted to use with two values.");
-            }
-        } else {
-            throw new DevelopmentException('Incompatible filter format.');
+            [$field, $operator, $value, $adonceValue] = $comparisonData;
         }
         
+        $referenceOrAlias = $this->helper->fieldToReference($field);
         
-        if (!in_array($operator, self::SUPPORTED)) {
-            $supportedOperators = implode(', ', self::SUPPORTED);
-            throw new DevelopmentException("Unsupported operator '{$operator}'. Allowed operators: {$supportedOperators}.");
-        }
-        
-        $field = $this->columnToField($column);
-        $alias = $this->columnToAlias($column);
-        
-        if ($field != $this->alias && !array_key_exists($field, $this->joins)) {
-            $this->joins[$field] = $this->fieldToAlias($field);
+        if (!$this->helper->isAlias($referenceOrAlias)) {
+            $alias = $this->helper->fieldToAlias($field);
+            $this->addJoinIfNeed($referenceOrAlias, $alias);
         }
         
         if ($value === null) {
-            return call_user_func_array([$this->qb->expr(), $operator], [$alias]);
+            return call_user_func_array([$this->qb->expr(), $operator], [$field]);
         }
 
-        $parameterName = $this->buildQueryParameterName($column, $value);
-        
+        $parameterName = $this->builder->buildQueryParameter($field, $value);
+
         if ($adonceValue) {
-            $adonceParameterName = $this->buildQueryParameterName($column, $adonceValue);
+            $adonceParameterName = $this->builder->buildQueryParameter($field, $adonceValue);
             
-            return call_user_func_array([$this->qb->expr(), $operator], [$alias, $parameterName, $adonceParameterName]);
+            return call_user_func_array([$this->qb->expr(), $operator], [$field, $parameterName, $adonceParameterName]);
         }
         
-        return call_user_func_array([$this->qb->expr(), $operator], [$alias, $parameterName]);
+        return call_user_func_array([$this->qb->expr(), $operator], [$field, $parameterName]);
     }
-    
-    /**
-     * 
-     * @param string $column
-     * @param string|array $value
-     * @return string
-     */
-    protected function buildQueryParameterName(string $column, $value) : string
-    {
-        $this->index ++;
-        $parameter = $this->index;
-        
-        if ($this->useNamedParameters) {
-            $parameter = $this->columnToParameter($column);
-        }
 
-        $this->parameters[] = $this->buildQueryParameter($column, $parameter, $value);
-        
-        return ($this->useNamedParameters ? ':' : '?') . $parameter;
-    }
-    
-    /**
-     *
-     * @param string $column
-     * @param integer|string $name
-     * @param string $value|array
-     * @return Parameter
-     */
-    protected function buildQueryParameter(string $column, $name, $value) : Parameter
-    {
-        if (is_array($value)) {
-            if (!$value) {
-                throw new DevelopmentException("The value for field '{$column}' could not be an empty array.");
-            }
-            
-            $integerTypes = [Types::INTEGER, Types::SMALLINT, Types::BIGINT];
-            $stringTypes = [Types::STRING];
-            $mappingTypes = implode(', ', array_merge($integerTypes, $stringTypes));
-            $valueTypes = implode(', ', [Types::INTEGER, Types::STRING]);
-            $fieldType = $this->getFieldType($column);
-            $connectionType = \Doctrine\DBAL\Connection::PARAM_INT_ARRAY;
-            
-            switch ($fieldType) {
-                case Types::BIGINT:
-                case Types::INTEGER:
-                case Types::SMALLINT:
-                    break;
-                case Types::STRING:
-                    $connectionType = \Doctrine\DBAL\Connection::PARAM_STR_ARRAY;
-                    break;
-                default:
-                    throw new DevelopmentException("Unsupported type found for field '{$column}'. It is allowed to use the IN operator only for types: '{$supportedTypes}'.");
-                    break;
-            }
-            
-            array_map(function($element) use($integerTypes, $stringTypes, $column, $fieldType, $valueTypes) {
-                if ((in_array($element, $integerTypes) && !is_int($element)) || (in_array($element, $stringTypes) && !is_string($element))) {
-                    $wrongType = gettype($element);
-                    throw new DevelopmentException("Found the array element with type '{$wrongType}' that does not match type '{$fieldType}' for field '{$column}'. Valid types for array elements are: '{$valueTypes}'.");
-                }
-            }, $value);
-            
-            return new Parameter($name, $value,  $connectionType);
-        }
-        
-        if ($this->useStrongTyping) {
-            //dd( \Doctrine\DBAL\Types\Type::getTypesMap());
-            $type = $this->getFieldType($column);
-            
-            switch ($type) {
-                case Types::BIGINT:
-                case Types::INTEGER:
-                case Types::SMALLINT:
-                    $value = (int) $value;
-                    break;
-                case Types::FLOAT:
-                case Types::DECIMAL:
-                    $value = (float) $value;
-                    break;
-                case Types::BOOLEAN:
-                    $value = (boolean) $value;
-                    break;
-                case Types::DATE_MUTABLE:
-                case Types::DATETIME_MUTABLE:
-                case Types::DATETIMETZ_MUTABLE:
-                //case Types::TIME_MUTABLE: TODO
-                    $timeZone = null;
-                    
-                    if (auth()->id() && method_exists(auth()->user(), 'getTimezone')) {
-                        $timeZone = auth()->user()->getTimezone();
-                    }
-                    
-                    $value = Carbon::parse($value, $timeZone);
-                    break;
-            }
-        }
-        
-        return new Parameter($name, $value, $type);
-    }
-    
 }

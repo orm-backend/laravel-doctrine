@@ -37,26 +37,40 @@ abstract class Repository
     
     /**
      * 
+     * @param array[] $parameters
+     * @param int $perPage
+     * @param string $pageName
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|\ItAces\Entity[]
+     */
+    abstract public function getList(array $parameters = [], int $perPage = 15, string $pageName = 'page');
+    
+    /**
+     * 
      * @param int $id
      * @return \ItAces\Entity
      */
     abstract public function findOrFail(int $id);
     
+    /**
+     * @return string[]
+     */
+    abstract protected function getDefaultOreder();
+
     
     /**
      * @param AbstractQuery $query
      * @param int           $perPage
-     * @param int           $page
+     * @param string        $page
      * @param bool          $fetchJoinCollection
      *
      * @return \Illuminate\Pagination\LengthAwarePaginator
      */
-    protected function paginate(AbstractQuery $query, int $perPage, int $page = 1, bool $fetchJoinCollection = null) : LengthAwarePaginator
+    protected function paginate(AbstractQuery $query, int $perPage, string $pageName = 'page', bool $fetchJoinCollection = null) : LengthAwarePaginator
     {
-        return PaginatorAdapter::fromParams(
+        return PaginatorAdapter::fromRequest(
             $query,
             $perPage,
-            $page,
+            $pageName,
             $fetchJoinCollection === true
         )->make();
     }
@@ -65,11 +79,16 @@ abstract class Repository
      * 
      * @param string $class
      * @param array $parameters
+     * @param string $alias
      * @return \Doctrine\ORM\QueryBuilder
      */
-    protected function createQueryBuilder(string $class, array $parameters) : QueryBuilder
+    protected function createQueryBuilder(string $class, array $parameters = [], string $alias = null) : QueryBuilder
     {
-        return Query::fromArray($this->em, $class, $parameters)->createQueryBuilder();
+        if (!array_key_exists('order', $parameters)) {
+            //$parameters['order'] = $this->getDefaultOreder();
+        }
+ 
+        return Query::fromArray($this->em, $class, $parameters, $alias)->createQueryBuilder();
     }
     
 }
