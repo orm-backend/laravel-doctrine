@@ -2,6 +2,8 @@
 
 namespace ItAces;
 
+use ItAces\ORM\Entities\EntityBase;
+
 /**
  * 
  * @author Vitaliy Kovalenko vvk@kola.cloud
@@ -13,28 +15,28 @@ interface SoftDeleteable
     /**
      * Set deletedAt.
      *
-     * @param \DateTime|null $deletedAt
+     * @param \Carbon\Carbon|null $deletedAt
      */
     public function setDeletedAt($deletedAt = null);
     
     /**
      * Get deletedAt.
      *
-     * @return \DateTime|null
+     * @return \Carbon\Carbon|null
      */
     public function getDeletedAt();
     
     /**
      * Set deletedBy.
      *
-     * @param \ItAces\Entity|null $deletedBy
+     * @param \ItAces\ORM\Entities\EntityBase|null $deletedBy
      */
-    public function setDeletedBy(Entity $deletedBy = null);
+    public function setDeletedBy(EntityBase $deletedBy = null);
     
     /**
      * Get deletedBy.
      *
-     * @return \ItAces\Entity|null
+     * @return \ItAces\ORM\Entities\EntityBase|null
      */
     public function getDeletedBy();
     

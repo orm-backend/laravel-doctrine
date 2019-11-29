@@ -7,6 +7,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query\Parameter;
+use ItAces\DBAL\DQLExpression;
 
 /**
  * 
@@ -89,12 +90,31 @@ class ParameterBuilder
     }
     
     /**
+     * 
+     * @param DQLExpression $expression
+     * @return string
+     */
+    public function createParameterFromExpression(DQLExpression $expression) : string
+    {
+        $placeholders = [];
+        
+        foreach ($expression->getValues() as $value) {
+            $this->index ++;
+            $parameterName = $this->useNamedParameters ? $expression->getName() . $this->index : $this->index;
+            $placeholders[] = ($this->useNamedParameters ? ':' : '?') . $parameterName;
+            $this->parameters[] = new Parameter( $parameterName, $value );
+        }
+        
+        return $expression->compile($placeholders);
+    }
+    
+    /**
      *
      * @param string $field
      * @param string|array $value
      * @return string
      */
-    public function buildQueryParameter(string $field, $value) : string
+    public function createParameter(string $field, $value) : string
     {
         $this->index ++;
         $placeholder = $this->index;
@@ -103,7 +123,7 @@ class ParameterBuilder
             $placeholder = $this->helper->fieldToPlaceholderName($field, $this->index);
         }
         
-        $this->parameters[] = $this->buildParameter($field, $placeholder, $value);
+        $this->parameters[] = is_array($value) ? $this->createParameterFromArray($field, $placeholder, $value) : $this->createParameterFromString($field, $placeholder, $value);
         
         return ($this->useNamedParameters ? ':' : '?') . $placeholder;
     }
@@ -111,46 +131,59 @@ class ParameterBuilder
     /**
      *
      * @param string $field
-     * @param integer|string $name
-     * @param string $value|array
+     * @param integer|string $placeholder
+     * @param array $value
      * @throws \ItAces\ORM\DevelopmentException
      * @return \Doctrine\ORM\Query\Parameter
      */
-    protected function buildParameter(string $field, $name, $value) : Parameter
+    protected function createParameterFromArray(string $field, $placeholder, array $value) : Parameter
+    {
+        if (!$value) {
+            throw new DevelopmentException("The value for field '{$field}' could not be an empty array.");
+        }
+        
+        $integerTypes = [Types::INTEGER, Types::SMALLINT, Types::BIGINT];
+        $stringTypes = [Types::STRING];
+        $mappingTypes = implode(', ', array_merge($integerTypes, $stringTypes));
+        $valueTypes = implode(', ', [Types::INTEGER, Types::STRING]);
+        $fieldType = $this->getFieldType($field);
+        $connectionType = Connection::PARAM_INT_ARRAY;
+        
+        switch ($fieldType) {
+            case Types::BIGINT:
+            case Types::INTEGER:
+            case Types::SMALLINT:
+                break;
+            case Types::STRING:
+                $connectionType = Connection::PARAM_STR_ARRAY;
+                break;
+            default:
+                throw new DevelopmentException("Unsupported type found for field '{$field}'. It is allowed to use the IN operator only for types: '{$supportedTypes}'.");
+                break;
+        }
+        
+        array_map(function($element) use($integerTypes, $stringTypes, $field, $fieldType, $valueTypes) {
+            if ((in_array($element, $integerTypes) && !is_int($element)) || (in_array($element, $stringTypes) && !is_string($element))) {
+                $wrongType = gettype($element);
+                throw new DevelopmentException("Found the array element with type '{$wrongType}' that does not match type '{$fieldType}' for field '{$field}'. Valid types for array elements are: '{$valueTypes}'.");
+            }
+        }, $value);
+            
+        return new Parameter($placeholder, $value,  $connectionType);
+    }
+    
+    /**
+     *
+     * @param string $field
+     * @param integer|string $placeholder
+     * @param string $value
+     * @throws \ItAces\ORM\DevelopmentException
+     * @return \Doctrine\ORM\Query\Parameter
+     */
+    protected function createParameterFromString(string $field, $placeholder, string $value) : Parameter
     {
         if (is_array($value)) {
-            if (!$value) {
-                throw new DevelopmentException("The value for field '{$field}' could not be an empty array.");
-            }
             
-            $integerTypes = [Types::INTEGER, Types::SMALLINT, Types::BIGINT];
-            $stringTypes = [Types::STRING];
-            $mappingTypes = implode(', ', array_merge($integerTypes, $stringTypes));
-            $valueTypes = implode(', ', [Types::INTEGER, Types::STRING]);
-            $fieldType = $this->getFieldType($field);
-            $connectionType = Connection::PARAM_INT_ARRAY;
-            
-            switch ($fieldType) {
-                case Types::BIGINT:
-                case Types::INTEGER:
-                case Types::SMALLINT:
-                    break;
-                case Types::STRING:
-                    $connectionType = Connection::PARAM_STR_ARRAY;
-                    break;
-                default:
-                    throw new DevelopmentException("Unsupported type found for field '{$field}'. It is allowed to use the IN operator only for types: '{$supportedTypes}'.");
-                    break;
-            }
-            
-            array_map(function($element) use($integerTypes, $stringTypes, $field, $fieldType, $valueTypes) {
-                if ((in_array($element, $integerTypes) && !is_int($element)) || (in_array($element, $stringTypes) && !is_string($element))) {
-                    $wrongType = gettype($element);
-                    throw new DevelopmentException("Found the array element with type '{$wrongType}' that does not match type '{$fieldType}' for field '{$field}'. Valid types for array elements are: '{$valueTypes}'.");
-                }
-            }, $value);
-                
-                return new Parameter($name, $value,  $connectionType);
         }
         
         if ($this->useStrongTyping) {
@@ -185,7 +218,7 @@ class ParameterBuilder
             }
         }
         
-        return new Parameter($name, $value, $type);
+        return new Parameter($placeholder, $value, $type);
     }
 
     /**
@@ -202,15 +235,6 @@ class ParameterBuilder
         if (count($pieces) < 2) {
             throw new DevelopmentException("The passed field '{$referenceOrAlias}' name must contain a dot.");
         }
-        
-//         if (array_key_exists($pieces[0], $this->aliasMap)) {
-//             $field = $this->aliasMap[$pieces[0]];
-//             $pieces = explode('.', $field);
-            
-//             if (count($pieces) < 2) {
-//                 throw new DevelopmentException("The passed field '{$field}' name must contain a dot.");
-//             }
-//         }
         
         if ($pieces[0] != $this->alias) {
             $reference = $this->helper->getReferenceByAlias($pieces[0]);

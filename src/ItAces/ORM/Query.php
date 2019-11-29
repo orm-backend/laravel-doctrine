@@ -5,7 +5,6 @@ namespace ItAces\ORM;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\Query\Expr\Composite;
 use Doctrine\ORM\Query\Expr\OrderBy;
 use Illuminate\Support\Arr;
@@ -307,17 +306,9 @@ class Query
              *
              * @var \ItAces\DBAL\DQLExpression $expression
              */
-//             [$expression] = $comparisonData;
-//             $placeholders = [];
-            
-//             foreach ($expression->getValues() as $value) {
-//                 $this->index ++;
-//                 $parameterName = $this->useNamedParameters ? $expression->getName() . $this->index : $this->index;
-//                 $placeholders[] = ($this->useNamedParameters ? ':' : '?') . $parameterName;
-//                 $this->parameters[] = new Parameter( $parameterName, $value );
-//             }
-            
-//             return $expression->compile($placeholders);
+            [$expression] = $comparisonData;
+
+            return $this->builder->createParameterFromExpression($expression);
         } else if ($length == 2) {
             [$field, $operator] = $comparisonData;
         } else if ($length == 3) {
@@ -337,10 +328,10 @@ class Query
             return call_user_func_array([$this->qb->expr(), $operator], [$field]);
         }
 
-        $parameterName = $this->builder->buildQueryParameter($field, $value);
+        $parameterName = $this->builder->createParameter($field, $value);
 
         if ($adonceValue) {
-            $adonceParameterName = $this->builder->buildQueryParameter($field, $adonceValue);
+            $adonceParameterName = $this->builder->createParameter($field, $adonceValue);
             
             return call_user_func_array([$this->qb->expr(), $operator], [$field, $parameterName, $adonceParameterName]);
         }
