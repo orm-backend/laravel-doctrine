@@ -283,8 +283,6 @@ class Query
         return $comparisons;
     }
     
-    
-    
     /**
      *
      * @param array $comparisonData

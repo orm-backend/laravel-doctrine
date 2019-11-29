@@ -40,7 +40,7 @@ abstract class Repository
      * @param array[] $parameters
      * @param int $perPage
      * @param string $pageName
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|\ItAces\Entity[]
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|\ItAces\ORM\Entities\EntityBase[]
      */
     abstract public function getList(array $parameters = [], int $perPage = 15, string $pageName = 'page');
     
