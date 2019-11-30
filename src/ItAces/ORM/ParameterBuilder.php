@@ -2,9 +2,6 @@
 
 namespace ItAces\ORM;
 
-use Carbon\Carbon;
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query\Parameter;
 use ItAces\DBAL\DQLExpression;
@@ -27,6 +24,12 @@ class ParameterBuilder
      * @var \ItAces\ORM\QueryHelper
      */
     protected $helper;
+    
+    /**
+     *
+     * @var \ItAces\ORM\Orderly
+     */
+    protected $orderly;
     
     /**
      * 
@@ -87,6 +90,7 @@ class ParameterBuilder
         $this->class = $class;
         $this->useNamedParameters = $useNamedParameters !== false;
         $this->useStrongTyping = $useStrongTyping !== false;
+        $this->orderly = new Orderly();
     }
     
     /**
@@ -94,7 +98,7 @@ class ParameterBuilder
      * @param DQLExpression $expression
      * @return string
      */
-    public function createParameterFromExpression(DQLExpression $expression) : string
+    public function createParameterByExpression(DQLExpression $expression) : string
     {
         $placeholders = [];
         
@@ -123,7 +127,7 @@ class ParameterBuilder
             $placeholder = $this->helper->fieldToPlaceholderName($field, $this->index);
         }
         
-        $this->parameters[] = is_array($value) ? $this->createParameterFromArray($field, $placeholder, $value) : $this->createParameterFromString($field, $placeholder, $value);
+        $this->parameters[] = is_array($value) ? $this->createParameterByArray($field, $placeholder, $value) : $this->createParameterByString($field, $placeholder, $value);
         
         return ($this->useNamedParameters ? ':' : '?') . $placeholder;
     }
@@ -136,40 +140,16 @@ class ParameterBuilder
      * @throws \ItAces\ORM\DevelopmentException
      * @return \Doctrine\ORM\Query\Parameter
      */
-    protected function createParameterFromArray(string $field, $placeholder, array $value) : Parameter
+    protected function createParameterByArray(string $field, $placeholder, array $value) : Parameter
     {
         if (!$value) {
             throw new DevelopmentException("The value for field '{$field}' could not be an empty array.");
         }
         
-        $integerTypes = [Types::INTEGER, Types::SMALLINT, Types::BIGINT];
-        $stringTypes = [Types::STRING];
-        $mappingTypes = implode(', ', array_merge($integerTypes, $stringTypes));
-        $valueTypes = implode(', ', [Types::INTEGER, Types::STRING]);
-        $fieldType = $this->getFieldType($field);
-        $connectionType = Connection::PARAM_INT_ARRAY;
-        
-        switch ($fieldType) {
-            case Types::BIGINT:
-            case Types::INTEGER:
-            case Types::SMALLINT:
-                break;
-            case Types::STRING:
-                $connectionType = Connection::PARAM_STR_ARRAY;
-                break;
-            default:
-                throw new DevelopmentException("Unsupported type found for field '{$field}'. It is allowed to use the IN operator only for types: '{$supportedTypes}'.");
-                break;
-        }
-        
-        array_map(function($element) use($integerTypes, $stringTypes, $field, $fieldType, $valueTypes) {
-            if ((in_array($element, $integerTypes) && !is_int($element)) || (in_array($element, $stringTypes) && !is_string($element))) {
-                $wrongType = gettype($element);
-                throw new DevelopmentException("Found the array element with type '{$wrongType}' that does not match type '{$fieldType}' for field '{$field}'. Valid types for array elements are: '{$valueTypes}'.");
-            }
-        }, $value);
-            
-        return new Parameter($placeholder, $value,  $connectionType);
+        $fieldMetadata = $this->getFieldMetadata($field);
+        [$value, $type] = $this->orderly->sanitizeArray($fieldMetadata, $value);
+
+        return new Parameter($placeholder, $value,  $type);
     }
     
     /**
@@ -180,44 +160,12 @@ class ParameterBuilder
      * @throws \ItAces\ORM\DevelopmentException
      * @return \Doctrine\ORM\Query\Parameter
      */
-    protected function createParameterFromString(string $field, $placeholder, string $value) : Parameter
+    protected function createParameterByString(string $field, $placeholder, string $value) : Parameter
     {
-        if (is_array($value)) {
-            
-        }
-        
-        if ($this->useStrongTyping) {
-            //dd( \Doctrine\DBAL\Types\Type::getTypesMap());
-            $type = $this->getFieldType($field);
-            
-            switch ($type) {
-                case Types::BIGINT:
-                case Types::INTEGER:
-                case Types::SMALLINT:
-                    $value = (int) $value;
-                    break;
-                case Types::FLOAT:
-                case Types::DECIMAL:
-                    $value = (float) $value;
-                    break;
-                case Types::BOOLEAN:
-                    $value = (boolean) $value;
-                    break;
-                case Types::DATE_MUTABLE:
-                case Types::DATETIME_MUTABLE:
-                case Types::DATETIMETZ_MUTABLE:
-                    //case Types::TIME_MUTABLE: TODO
-                    $timeZone = null;
-                    
-                    if (auth()->id() && method_exists(auth()->user(), 'getTimezone')) {
-                        $timeZone = auth()->user()->getTimezone();
-                    }
-                    
-                    $value = Carbon::parse($value, $timeZone);
-                    break;
-            }
-        }
-        
+        $type = null;
+        $fieldMetadata = $this->getFieldMetadata($field);
+        $value = $this->orderly->sanitizeString($fieldMetadata, $value);
+
         return new Parameter($placeholder, $value, $type);
     }
 
@@ -225,9 +173,9 @@ class ParameterBuilder
      *
      * @param string $referenceOrAlias
      * @throws \ItAces\ORM\DevelopmentException
-     * @return string
+     * @return array
      */
-    protected function getFieldType(string $referenceOrAlias) : string
+    protected function getFieldMetadata(string $referenceOrAlias) : array
     {
         $targetEntity = $this->class;
         $pieces = explode('.', $referenceOrAlias);
@@ -269,9 +217,7 @@ class ParameterBuilder
             throw new DevelopmentException("Unknown field '{$targetField}' in '{$field}'.");
         }
         
-        $fieldMetadata = $classMetadata->fieldMappings[$targetField];
-        
-        return $fieldMetadata['type'];
+        return $classMetadata->fieldMappings[$targetField];
     }
     
     /**

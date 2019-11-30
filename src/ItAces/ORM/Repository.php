@@ -47,7 +47,7 @@ abstract class Repository
     /**
      * 
      * @param int $id
-     * @return \ItAces\Entity
+     * @return \ItAces\ORM\Entities\EntityBase
      */
     abstract public function findOrFail(int $id);
     
@@ -76,6 +76,16 @@ abstract class Repository
     }
     
     /**
+     *
+     * @param string $class
+     * @return \Doctrine\ORM\QueryBuilder
+     */
+    protected function createQueryBuilderFromRequest(string $class) : QueryBuilder
+    {
+        return QueryFactory::fromRequest($this->em, $class)->createQueryBuilder();
+    }
+    
+    /**
      * 
      * @param string $class
      * @param array $parameters
@@ -85,9 +95,9 @@ abstract class Repository
     protected function createQueryBuilder(string $class, array $parameters = [], string $alias = null) : QueryBuilder
     {
         if (!array_key_exists('order', $parameters)) {
-            //$parameters['order'] = $this->getDefaultOreder();
+            $parameters['order'] = $this->getDefaultOreder();
         }
- 
+
         return Query::fromArray($this->em, $class, $parameters, $alias)->createQueryBuilder();
     }
     

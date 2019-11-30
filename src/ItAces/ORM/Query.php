@@ -8,6 +8,7 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query\Expr\Composite;
 use Doctrine\ORM\Query\Expr\OrderBy;
 use Illuminate\Support\Arr;
+use ItAces\DBAL\DQLExpression;
 
 /**
  *
@@ -139,6 +140,12 @@ class Query
         }
         
         foreach ($this->order as $field) {
+            if ($field instanceof DQLExpression) {
+                $order = $this->builder->createParameterByExpression($field);
+                $this->qb->add('orderBy', $order, true);
+                continue;
+            }
+            
             $this->validator->validateFieldForOrder($field);
             $alias = $this->helper->fieldToAlias($field);
             $order = $this->buildOrder($alias);
@@ -306,7 +313,7 @@ class Query
              */
             [$expression] = $comparisonData;
 
-            return $this->builder->createParameterFromExpression($expression);
+            return $this->builder->createParameterByExpression($expression);
         } else if ($length == 2) {
             [$field, $operator] = $comparisonData;
         } else if ($length == 3) {
@@ -335,6 +342,77 @@ class Query
         }
         
         return call_user_func_array([$this->qb->expr(), $operator], [$field, $parameterName]);
+    }
+    
+    /**
+     * @param array $join
+     */
+    public function setJoin(array $join)
+    {
+        $this->join = $join;
+    }
+
+    /**
+     * @param array $select
+     */
+    public function setSelect(array $select)
+    {
+        $this->select = $select;
+    }
+
+    /**
+     * @param array $filter
+     */
+    public function setFilter(array $filter)
+    {
+        $this->filter = $filter;
+    }
+
+    /**
+     * @param array $order
+     */
+    public function setOrder(array $order)
+    {
+        $this->order = $order;
+    }
+
+    /**
+     * @param string $alias
+     */
+    public function setAlias($alias)
+    {
+        $this->alias = $alias;
+    }
+    /**
+     * @param \Doctrine\ORM\QueryBuilder $qb
+     */
+    public function setQueryBuilder(QueryBuilder $qb)
+    {
+        $this->qb = $qb;
+    }
+
+    /**
+     * @param \ItAces\ORM\QueryHelper $helper
+     */
+    public function setHelper(QueryHelper $helper)
+    {
+        $this->helper = $helper;
+    }
+
+    /**
+     * @param \ItAces\ORM\QueryValidator $validator
+     */
+    public function setValidator(QueryValidator $validator)
+    {
+        $this->validator = $validator;
+    }
+
+    /**
+     * @param \ItAces\ORM\ParameterBuilder $builder
+     */
+    public function setBuilder(ParameterBuilder $builder)
+    {
+        $this->builder = $builder;
     }
 
 }

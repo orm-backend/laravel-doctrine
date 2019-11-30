@@ -22,23 +22,30 @@ class QueryFactory
      */
     public static function fromArray(EntityManager $em, string $class, array $parameters = [], string $alias = null) : Query
     {
-        $instance = new Query();
-        $instance->alias = $alias ? $alias : lcfirst( (new \ReflectionClass($class))->getShortName() );
-        $instance->qb = $em->createQueryBuilder()->from($class, $instance->alias);
-        $instance->select = array_key_exists('select', $parameters) ? $parameters['select'] : [];
-        $instance->join = array_key_exists('join', $parameters) ? $parameters['join'] : [];
-        $instance->filter = array_key_exists('filter', $parameters) ? $parameters['filter'] : [];
-        $instance->order = array_key_exists('order', $parameters) ? $parameters['order'] : [];
-        
-        if (!in_array($instance->alias, $instance->select)) {
-            $instance->select[] = $instance->alias;
+        $alias = $alias ? $alias : lcfirst( (new \ReflectionClass($class))->getShortName() );
+        $select = array_key_exists('select', $parameters) ? $parameters['select'] : [];
+        $join = array_key_exists('join', $parameters) ? $parameters['join'] : [];
+        $filter = array_key_exists('filter', $parameters) ? $parameters['filter'] : [];
+        $order = array_key_exists('order', $parameters) ? $parameters['order'] : [];
+
+        if (!in_array($alias, $select)) {
+            $select[] = $alias;
         }
         
-        $instance->helper = new QueryHelper();
-        $instance->validator = new QueryValidator($instance->qb, $instance->helper, $instance->alias, $class);
-        $instance->builder = new ParameterBuilder($instance->qb, $instance->helper, $instance->alias, $class);
+        $qb = $em->createQueryBuilder()->from($class, $alias);
+        $helper = new QueryHelper();
+        $query = new Query();
+        $query->setAlias($alias);
+        $query->setQueryBuilder($qb);
+        $query->setSelect($select);
+        $query->setJoin($join);
+        $query->setFilter($filter);
+        $query->setOrder($order);
+        $query->setHelper($helper);
+        $query->setValidator(new QueryValidator($qb, $helper, $alias, $class));
+        $query->setBuilder(new ParameterBuilder($qb, $helper, $alias, $class));
         
-        return $instance;
+        return $query;
     }
     
     /**
@@ -46,55 +53,70 @@ class QueryFactory
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
      * @param string $json
-     * @param string $alias
      * @throws \ItAces\ORM\DevelopmentException
      * @return \ItAces\ORM\Query
      */
-    public static function fromJson(EntityManager $em, string $class, string $json, string $alias = null) : Query
+    public static function fromJson(EntityManager $em, string $class, string $json) : Query
     {
-        $parameters = json_decode($json, true);
+        $parameters = json_decode($json, true, null, JSON_BIGINT_AS_STRING);
         
         if ($parameters === null) {
             throw new DevelopmentException('The json cannot be decoded or the encoded data is deeper than the recursion limit.');
         }
         
-        return static::fromArray($em, $class, $parameters, $alias);
+        return static::fromArray($em, $class, $parameters);
     }
     
     /**
      *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
-     * @param string $alias
      * @return \ItAces\ORM\Query
      */
-    public static function fromRequest(EntityManager $em, string $class, string $alias = null) : Query
+    public static function fromRequest(EntityManager $em, string $class) : Query
     {
-        return static::fromArray($em, $class, request()->all(), $alias);
+        if (request()->isMethod('GET')) {
+            return static::fromGet($em, $class);
+        } else if (request()->isMethod('PUT')) {
+            return static::fromPut($em, $class);
+        } else if (request()->isMethod('POST')) {
+            return static::fromPost($em, $class);
+        }
+        
+        return static::fromArray($em, $class, request()->all());
     }
     
     /**
      *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
-     * @param string $alias
      * @return \ItAces\ORM\Query
      */
-    public static function fromGet(EntityManager $em, string $class, string $alias = null) : Query
+    public static function fromGet(EntityManager $em, string $class) : Query
     {
-        return static::fromArray($em, $class, request()->query(), $alias);
+        return static::fromArray($em, $class, request()->query());
     }
     
     /**
      *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
-     * @param string $alias
      * @return \ItAces\ORM\Query
      */
-    public static function fromPost(EntityManager $em, string $class, string $alias = null) : Query
+    public static function fromPost(EntityManager $em, string $class) : Query
     {
-        return static::fromArray($em, $class, request()->post(), $alias);
+        return static::fromArray($em, $class, request()->post());
+    }
+    
+    /**
+     *
+     * @param \Doctrine\ORM\EntityManager $em
+     * @param string $class
+     * @return \ItAces\ORM\Query
+     */
+    public static function fromPut(EntityManager $em, string $class) : Query
+    {
+        return static::fromJson($em, $class, request()->json());
     }
     
 }
