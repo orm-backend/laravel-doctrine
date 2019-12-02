@@ -5,6 +5,7 @@ namespace ItAces\Controllers;
 use Illuminate\Http\Request;
 use ItAces\Json\JsonCollectionSerializer;
 use ItAces\Json\JsonSerializer;
+use ItAces\Repositories\ApiRepository;
 
 /**
  * 
@@ -24,6 +25,21 @@ class JsonCRUDController extends WebController
      * @var string[]
      */
     protected $additional = [];
+    
+    /**
+     *
+     * @var \ItAces\Repositories\ApiRepository
+     */
+    protected $repository;
+    
+    public function __construct(ApiRepository $repository)
+    {
+        $this->repository = $repository;
+        
+        if (auth()->id() && auth()->user()->isAdmin()) {
+            $this->repository->em()->getFilters()->disable('softdelete');
+        }
+    }
     
     /**
     * Display a listing of the resource.

@@ -18,10 +18,9 @@ class QueryFactory
      * @param string $class
      * @param array $parameters
      * @param string $alias
-     * @param boolean $fetchAssociations
      * @return \ItAces\ORM\Query
      */
-    public static function fromArray(EntityManager $em, string $class, array $parameters = [], string $alias = null, bool $fetchAssociations = null) : Query
+    public static function fromArray(EntityManager $em, string $class, array $parameters = [], string $alias = null) : Query
     {
         $alias = $alias ? $alias : lcfirst( (new \ReflectionClass($class))->getShortName() );
         $select = array_key_exists('select', $parameters) ? $parameters['select'] : [];
@@ -31,15 +30,6 @@ class QueryFactory
 
         if (!in_array($alias, $select)) {
             $select[] = $alias;
-        }
-        
-        if ($fetchAssociations) {
-            $classMetadata = $em->getClassMetadata($class);
-            
-            foreach ($classMetadata->associationMappings as $associationMapping) {
-                $fieldName = $associationMapping['fieldName'];
-                $select[] = "{$alias}.{$fieldName}";
-            }
         }
         
         $qb = $em->createQueryBuilder()->from($class, $alias);
@@ -63,10 +53,11 @@ class QueryFactory
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
      * @param string $json
+     * @param array $additionalParameters
      * @throws \ItAces\ORM\DevelopmentException
      * @return \ItAces\ORM\Query
      */
-    public static function fromJson(EntityManager $em, string $class, string $json) : Query
+    public static function fromJson(EntityManager $em, string $class, string $json, array $additionalParameters = []) : Query
     {
         $parameters = json_decode($json, true, null, JSON_BIGINT_AS_STRING);
         
@@ -74,59 +65,63 @@ class QueryFactory
             throw new DevelopmentException('The json cannot be decoded or the encoded data is deeper than the recursion limit.');
         }
         
-        return static::fromArray($em, $class, $parameters);
+        return static::fromArray($em, $class, array_merge($parameters, $additionalParameters));
     }
     
     /**
      *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
+     * @param array $additionalParameters
      * @return \ItAces\ORM\Query
      */
-    public static function fromRequest(EntityManager $em, string $class) : Query
+    public static function fromRequest(EntityManager $em, string $class, array $additionalParameters = []) : Query
     {
         if (request()->isMethod('GET')) {
-            return static::fromGet($em, $class);
+            return static::fromGet($em, $class, $additionalParameters);
         } else if (request()->isMethod('PUT')) {
-            return static::fromPut($em, $class);
+            return static::fromPut($em, $class, $additionalParameters);
         } else if (request()->isMethod('POST')) {
-            return static::fromPost($em, $class);
+            return static::fromPost($em, $class, $additionalParameters);
         }
         
-        return static::fromArray($em, $class, request()->all(), null, true);
+        return static::fromArray($em, $class, array_merge(request()->all(), $additionalParameters));
     }
     
     /**
      *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
+     * @param array $additionalParameters
      * @return \ItAces\ORM\Query
      */
-    public static function fromGet(EntityManager $em, string $class) : Query
+    public static function fromGet(EntityManager $em, string $class, array $additionalParameters = []) : Query
     {
-        return static::fromArray($em, $class, request()->query(), null, true);
+        return static::fromArray($em, $class, array_merge(request()->query(), $additionalParameters));
     }
     
     /**
      *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
+     * @param array $additionalParameters
      * @return \ItAces\ORM\Query
      */
-    public static function fromPost(EntityManager $em, string $class) : Query
+    public static function fromPost(EntityManager $em, string $class, array $additionalParameters = []) : Query
     {
-        return static::fromArray($em, $class, request()->post(), null, true);
+        return static::fromArray($em, $class, array_merge(request()->post(), $additionalParameters));
     }
     
     /**
      *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
+     * @param array $additionalParameters
      * @return \ItAces\ORM\Query
      */
-    public static function fromPut(EntityManager $em, string $class) : Query
+    public static function fromPut(EntityManager $em, string $class, array $additionalParameters = []) : Query
     {
-        return static::fromJson($em, $class, request()->json(), null, true);
+        return static::fromJson($em, $class, request()->json(), $additionalParameters);
     }
     
 }
