@@ -2,59 +2,46 @@
 
 namespace ItAces\Controllers;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Request;
+use Doctrine\ORM\AbstractQuery;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controller;
+use ItAces\Repositories\Repository;
+use LaravelDoctrine\ORM\Pagination\PaginatorAdapter;
 
 abstract class WebController extends Controller
 {
-    use \Illuminate\Foundation\Validation\ValidatesRequests;
     
     /**
      *
-     * @return array|string
+     * @var \ItAces\Repositories\Repository
      */
-    abstract protected function getDefaultOrder();
-
-    /**
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param \Illuminate\Database\Eloquent\Builder $builder
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    protected function addOrders(Request $request, Builder $builder) {
-        $orders = $request->input('order');
+    protected $repository;
+    
+    public function __construct(Repository $repository)
+    {
+        $this->repository = $repository;
         
-        if (!$orders) {
-            $orders = $this->getDefaultOrder();
+        if (auth()->id() && auth()->user()->isAdmin()) {
+            $this->repository->em()->getFilters()->disable('softdelete');
         }
-        
-        if (!is_array($orders)) {
-            $orders = [$orders];
-        }
-        
-        foreach ($orders as $order) {
-            $this->addOrder($builder, $order);
-        }
-        
-        return $builder;
     }
     
     /**
+     * @param \Doctrine\ORM\AbstractQuery $query
+     * @param int           $perPage
+     * @param string        $page
+     * @param bool          $fetchJoinCollection
      *
-     * @param \Illuminate\Database\Eloquent\Builder $builder
-     * @param string $order
+     * @return \Illuminate\Pagination\LengthAwarePaginator
      */
-    private function addOrder(Builder $builder, string $order) {
-        $direction = 'asc';
-        
-        if (strpos($order, '-') === 0) {
-            $direction = 'desc';
-            $order = substr($order, 1);
-        }
-        
-        $order = str_replace('-', '.', $order);
-        $builder->orderBy($order, $direction);
+    protected function paginate(AbstractQuery $query, int $perPage = 15, string $pageName = 'page', bool $fetchJoinCollection = null) : LengthAwarePaginator
+    {
+        return PaginatorAdapter::fromRequest(
+            $query,
+            $perPage,
+            $pageName,
+            $fetchJoinCollection === true
+        )->make();
     }
     
 }

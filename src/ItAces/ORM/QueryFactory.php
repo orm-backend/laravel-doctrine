@@ -18,9 +18,10 @@ class QueryFactory
      * @param string $class
      * @param array $parameters
      * @param string $alias
+     * @param boolean $fetchAssociations
      * @return \ItAces\ORM\Query
      */
-    public static function fromArray(EntityManager $em, string $class, array $parameters = [], string $alias = null) : Query
+    public static function fromArray(EntityManager $em, string $class, array $parameters = [], string $alias = null, bool $fetchAssociations = null) : Query
     {
         $alias = $alias ? $alias : lcfirst( (new \ReflectionClass($class))->getShortName() );
         $select = array_key_exists('select', $parameters) ? $parameters['select'] : [];
@@ -30,6 +31,15 @@ class QueryFactory
 
         if (!in_array($alias, $select)) {
             $select[] = $alias;
+        }
+        
+        if ($fetchAssociations) {
+            $classMetadata = $em->getClassMetadata($class);
+            
+            foreach ($classMetadata->associationMappings as $associationMapping) {
+                $fieldName = $associationMapping['fieldName'];
+                $select[] = "{$alias}.{$fieldName}";
+            }
         }
         
         $qb = $em->createQueryBuilder()->from($class, $alias);
@@ -83,7 +93,7 @@ class QueryFactory
             return static::fromPost($em, $class);
         }
         
-        return static::fromArray($em, $class, request()->all());
+        return static::fromArray($em, $class, request()->all(), null, true);
     }
     
     /**
@@ -94,7 +104,7 @@ class QueryFactory
      */
     public static function fromGet(EntityManager $em, string $class) : Query
     {
-        return static::fromArray($em, $class, request()->query());
+        return static::fromArray($em, $class, request()->query(), null, true);
     }
     
     /**
@@ -105,7 +115,7 @@ class QueryFactory
      */
     public static function fromPost(EntityManager $em, string $class) : Query
     {
-        return static::fromArray($em, $class, request()->post());
+        return static::fromArray($em, $class, request()->post(), null, true);
     }
     
     /**
@@ -116,7 +126,7 @@ class QueryFactory
      */
     public static function fromPut(EntityManager $em, string $class) : Query
     {
-        return static::fromJson($em, $class, request()->json());
+        return static::fromJson($em, $class, request()->json(), null, true);
     }
     
 }

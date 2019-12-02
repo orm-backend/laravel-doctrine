@@ -13,6 +13,7 @@
     	"php": "^7.1",
     	"laravel/framework": "^6.0",
     	"laravel-doctrine/orm": "^1.5",
+    	"beberlei/DoctrineExtensions": "^1.0",
     	"nesbot/carbon": "^2.0"
     },
     "require-dev": {

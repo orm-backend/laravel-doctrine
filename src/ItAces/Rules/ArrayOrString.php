@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Rules;
+namespace ItAces\Rules;
 
 use Illuminate\Validation\Validator;
 
@@ -11,29 +11,6 @@ use Illuminate\Validation\Validator;
  */
 class ArrayOrString
 {
-    
-    /**
-     * 
-     * @var integer
-     */
-    protected $min;
-    
-    /**
-     *
-     * @var integer
-     */
-    protected $max;
-    
-    /**
-     * Create a new rule instance.
-     *
-     * @return void
-     */
-    public function __construct(int $min = null, int $max = null)
-    {
-        $this->min = $min !== null ? $min : 1;
-        $this->max = $max !== null ? $max : 255;
-    }
     
     /**
      * Determine if the validation rule passes.
@@ -50,8 +27,8 @@ class ArrayOrString
             $value = [$value];
         }
         
-        $min = $this->min;
-        $max = $this->max;
+        $min = array_key_exists(0, $parameters) ? (int) $parameters[0] : null;
+        $max = array_key_exists(1, $parameters) ? (int) $parameters[1] : null;
         
         return array_filter($value, function($element) use ($min, $max) {
             if (!is_string($element)) {
@@ -60,7 +37,7 @@ class ArrayOrString
             
             $length = strlen($element);
             
-            return $length > $min - 1 && $length < $max + 1;
+            return ($min === null || $length > $min - 1) && ($max === null && $length < $max + 1);
         }) == $value;
     }
 

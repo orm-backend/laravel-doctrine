@@ -3,29 +3,18 @@
 namespace ItAces\Rules;
 
 use Illuminate\Validation\Validator;
-use Carbon\Carbon;
 
 /**
  * 
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
-class ArrayOrDate
+class ArrayOfInteger
 {
-
-    /**
-     * Create a new rule instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
     
     /**
      * Determine if the validation rule passes.
-     * 
+     *
      * @param string $attribute
      * @param mixed $value
      * @param array $parameters
@@ -35,23 +24,18 @@ class ArrayOrDate
     public function validate($attribute, $value, $parameters, Validator $validator)
     {
         if (!is_array($value)) {
-            $value = [$value];
+            return false;
         }
         
-        return array_filter($value, function($element) {
-            $success = false;
-            
-            if (!is_string($element)) {
+        $min = array_key_exists(0, $parameters) ? (int) $parameters[0] : null;
+        $max = array_key_exists(1, $parameters) ? (int) $parameters[1] : null;
+        
+        return array_filter($value, function($element) use ($min, $max) {
+            if ((int) $element != $element) {
                 return false;
             }
             
-            try {
-                Carbon::parse($element);
-                $success = true;
-            } catch (\Exception $e) {
-            }
-            
-            return $success;
+            return ($min === null || $element > $min - 1) && ($max === null || $element < $max + 1);
         }) == $value;
     }
 

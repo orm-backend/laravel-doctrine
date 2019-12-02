@@ -270,14 +270,14 @@ abstract class EntityBase implements SoftDeleteable
     protected function validate()
     {
         $attributes = [];
-        $rules = $this->getValidationRules();
+        $rules = $this->getModelValidationRules();
         $fields = array_keys($rules);
         
         foreach ($fields as $field) {
             $method = 'get' . ucfirst($field);
             $attributes[$field] = $this->$method();
         }
-        
+
         $validator = Validator::make($attributes, $rules);
         $validator->validate();
     }
@@ -310,4 +310,9 @@ abstract class EntityBase implements SoftDeleteable
         $this->{$field} = $value;
     }
     
+    public function jsonSerialize()
+    {
+        
+    }
+
 }
