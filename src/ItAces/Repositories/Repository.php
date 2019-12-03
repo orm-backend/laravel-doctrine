@@ -4,10 +4,13 @@ namespace ItAces\Repositories;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use ItAces\ORM\DevelopmentException;
+use ItAces\ORM\Orderly;
 use ItAces\ORM\QueryFactory;
+use ItAces\ORM\Entities\EntityBase;
 
 /**
  * 
@@ -22,15 +25,22 @@ class Repository
      */
     protected $em;
     
+    /**
+     * 
+     * @var \ItAces\ORM\Orderly
+     */
+    protected $orderly;
+    
     public function __construct() {
         $this->em = app('em');
+        $this->orderly = new Orderly;
     }
     
     /**
      *
      * @return  \Doctrine\ORM\EntityManager
      */
-    public function em()
+    public function em() : EntityManager
     {
         return $this->em;
     }
@@ -61,9 +71,8 @@ class Repository
      *
      * @param string $class
      * @param integer $id
-     * @return \Doctrine\ORM\Query
      */
-    public function delete(string $class, int $id) : Query
+    public function delete(string $class, int $id) : void
     {
         $entity = $this->findOrFail($class, $id);
         $this->em->remove($entity);
@@ -75,7 +84,8 @@ class Repository
      * @param int $id
      * @return \ItAces\ORM\Entities\EntityBase
      */
-    public function findOrFail(string $class, int $id) {
+    public function findOrFail(string $class, int $id) : EntityBase
+    {
         $element = $this->em->getRepository($class)->find($id);
         
         if (!$element) {
@@ -93,7 +103,7 @@ class Repository
      * @throws DevelopmentException
      * @return \ItAces\ORM\Entities\EntityBase
      */
-    public function createOrUpdate(string $class, array $data, int $id = null)
+    public function createOrUpdate(string $class, array $data, int $id = null) : EntityBase
     {
         if ($id) {
             $entity = $this->findOrFail($class, $id);
@@ -102,13 +112,13 @@ class Repository
         }
 
         $classMetadata = $this->em->getClassMetadata($class);
-        
+
         foreach ($classMetadata->fieldMappings as $fieldMapping) {
             $fieldName = $fieldMapping['fieldName'];
-            $setter = 'set' . ucfirst($fieldName);
-            
+
             if (array_key_exists($fieldName, $data)) {
-                $entity->$setter( $data[$fieldName] );
+                $setter = 'set' . ucfirst($fieldName);
+                $entity->$setter( $this->orderly->sanitizeString($fieldMapping, $data[$fieldName]) );
             }
         }
         
@@ -116,36 +126,52 @@ class Repository
             $fieldName = $associationMapping['fieldName'];
 
             if (array_key_exists($fieldName, $data)) {
-                $entityName = $associationMapping['targetEntity'];
+                $targetEntity = $associationMapping['targetEntity'];
                 $getter = 'get' . ucfirst($fieldName);
                 $setter = 'set' . ucfirst($fieldName);
                 
                 if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
                     // TODO cascade: persist
                     if (!is_array($data[$fieldName])) {
-                        throw new DevelopmentException('The parameter for multiple associations must be an array.');
+                        throw new DevelopmentException('The parameter value for multiple associations must be an array.');
                     }
 
                     $collection = $entity->$getter();
                     $collection->clear();
-                    
+                    // TODO DevelopmentException or ValidationException ?
                     foreach ($data[$fieldName] as $associationId) {
-                        $association = $this->em->find($entityName, $associationId);
+                        $associationId = (int) $associationId;
+                        
+                        if ($associationId < 1) {
+                            throw new DevelopmentException("The value of '{$class}::{$fieldName}' must be an array of unsigned integer.");
+                        }
+                        
+                        $association = $this->em->find($targetEntity, $associationId);
                         
                         if (!$association) {
-                            throw new DevelopmentException("Entity '{$entityName}' with id '{$associationId}' does not exists.");
+                            throw new DevelopmentException("The value of '{$class}::{$fieldName}' is incorrect. The entity '{$targetEntity}' with id '{$associationId}' does not exists.");
                         }
                         
                         $collection->add($association);
                     }
                 } else if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
-                    $association = $this->em->find($entityName, $data[$fieldName]);
-                    
-                    if (!$association) {
-                        throw new DevelopmentException("Entity '{$entityName}' with id '{$associationId}' does not exists.");
+                    if ($data[$fieldName] !== null) {
+                        $associationId = (int) $data[$fieldName];
+                        
+                        if ($associationId < 1) {
+                            throw new DevelopmentException("The value of '{$class}::{$fieldName}' must be an unsigned integer.");
+                        }
+                        
+                        $association = $this->em->find($targetEntity, $associationId);
+                        
+                        if (!$association) {
+                            throw new DevelopmentException("The value of '{$class}::{$fieldName}' is incorrect. The entity '{$targetEntity}' with id '{$associationId}' does not exists.");
+                        }
+                        
+                        $entity->$setter( $association );
+                    } else {
+                        $entity->$setter( $data[$fieldName] );
                     }
-                    
-                    $entity->$setter( $association );
                 }
             }
         }

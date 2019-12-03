@@ -62,7 +62,7 @@ class JsonCRUDController extends WebController
      */
     public function create(Request $request)
     {
-        $data = $request->json();
+        $data = $request->json()->all();
         $request->validate($this->class::getRequestValidationRules());
         $instance = $this->repository->createOrUpdate($this->class, $data);
         $this->repository->em()->flush();
@@ -92,7 +92,7 @@ class JsonCRUDController extends WebController
      */
     public function update(Request $request, int $id)
     {
-        $data = $request->json();
+        $data = $request->json()->all();
         $request->validate($this->class::getRequestValidationRules());
         $instance = $this->repository->createOrUpdate($this->class, $data, $id);
         $this->repository->em()->flush();

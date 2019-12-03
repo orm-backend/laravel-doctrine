@@ -5,6 +5,7 @@ namespace ItAces\Repositories;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use ItAces\ORM\QueryFactory;
+use ItAces\ORM\Entities\EntityBase;
 
 /**
  * 
@@ -43,7 +44,8 @@ class ApiRepository extends Repository
      * {@inheritDoc}
      * @see \ItAces\Repositories\Repository::findOrFail()
      */
-    public function findOrFail(string $class, int $id) {
+    public function findOrFail(string $class, int $id) : EntityBase
+    {
         $element = $this->getQuery($class, [
             'filter' => [
                 ['e.id', 'eq', $id]
@@ -64,7 +66,7 @@ class ApiRepository extends Repository
      * @param string $alias
      * @return array
      */
-    protected function appendAdditionalParameters(string $class, array $parameters = [], string $alias = null)
+    protected function appendAdditionalParameters(string $class, array $parameters = [], string $alias = null) : array
     {
         $alias = $alias ? $alias : lcfirst( (new \ReflectionClass($class))->getShortName() );
         $classMetadata = $this->em->getClassMetadata($class);

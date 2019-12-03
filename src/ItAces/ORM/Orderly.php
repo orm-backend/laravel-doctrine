@@ -23,7 +23,7 @@ class Orderly
      * @param string $value
      * @return mixed
      */
-    public function sanitizeString(array $fieldMetadata, string $value)
+    public function sanitizeString(array $fieldMetadata, string $value = null)
     {
         // What TODO with nuls and empty strings?
         if (is_null($value)) {
@@ -55,14 +55,25 @@ class Orderly
             case Types::DATE_MUTABLE:
             case Types::DATETIME_MUTABLE:
             case Types::DATETIMETZ_MUTABLE:
-                //TODO case Types::TIME_MUTABLE:
-                $timeZone = null;
+            //TODO case Types::TIME_MUTABLE:
+                $value = trim($value);
                 
-                if (auth()->id() && method_exists(auth()->user(), 'getTimezone')) {
-                    $timeZone = auth()->user()->getTimezone();
+                if (preg_match('/^[0-9]+$/', $value)) {
+                    $value = Carbon::createFromTimestamp((int) $value);
+                } else {
+                    $timeZone = null;
+                    
+                    if (auth()->id() && method_exists(auth()->user(), 'getTimezone')) {
+                        $timeZone = auth()->user()->getTimezone();
+                    }
+                    
+                    try {
+                        $value = Carbon::parse($value, $timeZone);
+                    } catch (\Exception $e) {
+                        throw new DevelopmentException($e->getMessage());
+                    }
                 }
                 
-                $value = Carbon::parse($value, $timeZone);
                 break;
                 
         }
