@@ -56,10 +56,12 @@ class Orderly
             case Types::DATETIME_MUTABLE:
             case Types::DATETIMETZ_MUTABLE:
             //TODO case Types::TIME_MUTABLE:
-                $value = trim($value);
+                if (is_string($value)) {
+                    $value = trim($value);
+                }
                 
-                if (preg_match('/^[0-9]+$/', $value)) {
-                    $value = Carbon::createFromTimestamp((int) $value);
+                if (is_int($value) || (is_string($value) && preg_match('/^[0-9]+$/', $value))) {
+                    $value = Carbon::createFromTimestamp($value);
                 } else {
                     $timeZone = null;
                     
