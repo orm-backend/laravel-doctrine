@@ -3,6 +3,7 @@
 namespace ItAces\Json;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Illuminate\Pagination\LengthAwarePaginator;
 use JsonSerializable;
@@ -54,17 +55,16 @@ class JsonCollectionSerializer implements JsonSerializable
     
     /**
      * 
-     * @param array $entities
+     * @param \Doctrine\ORM\PersistentCollection $entities
      * @param ClassMetadata $classMetadata
      * @return \stdClass[]
      */
-    static public function toJson(array $entities, ClassMetadata $classMetadata)
+    static public function toJson(PersistentCollection $entities, ClassMetadata $classMetadata)
     {
         $data = [];
 
         foreach ($entities as $entity) {
-            $serializer = new JsonSerializer($this->em, $entity);
-            $data[] = $serializer->toJson();
+            $data[] = JsonSerializer::toJson($entity, $classMetadata);
         }
         
         return $data;

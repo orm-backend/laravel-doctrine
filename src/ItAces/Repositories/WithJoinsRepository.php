@@ -12,8 +12,23 @@ use ItAces\ORM\Entities\EntityBase;
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
-class ApiRepository extends Repository
+class WithJoinsRepository extends Repository
 {
+    
+    /**
+     * 
+     * @var boolean
+     */
+    protected $joinCollections;
+    
+    /**
+     * 
+     * @param bool $joinCollections
+     */
+    public function __construct(bool $joinCollections = true) {
+        parent::__construct();
+        $this->joinCollections = $joinCollections;
+    }
     
     /**
      * 
@@ -46,11 +61,14 @@ class ApiRepository extends Repository
      */
     public function findOrFail(string $class, int $id) : EntityBase
     {
-        $element = $this->getQuery($class, [
+        $parameters = [
             'filter' => [
                 ['e.id', 'eq', $id]
             ]
-        ], 'e')->getSingleResult();
+        ];
+        
+        $parameters = $this->appendAdditionalParameters($class, $parameters, 'e');
+        $element = $this->getQuery($class, $parameters, 'e')->getSingleResult();
         
         if (!$element) {
             abort(404, 'Not found.');
@@ -76,7 +94,7 @@ class ApiRepository extends Repository
         }
         
         foreach ($classMetadata->associationMappings as $associationMapping) {
-            if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
+            if (!$this->joinCollections && $associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
                 continue;
             }
             
@@ -89,5 +107,5 @@ class ApiRepository extends Repository
         
         return $parameters;
     }
-    
+
 }

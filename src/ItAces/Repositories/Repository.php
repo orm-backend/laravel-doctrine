@@ -31,6 +31,7 @@ class Repository
      */
     protected $orderly;
     
+
     public function __construct() {
         $this->em = app('em');
         $this->orderly = new Orderly;
@@ -60,6 +61,7 @@ class Repository
     /**
      *
      * @param string $class
+     * @param bool $joinCollections
      * @return \Doctrine\ORM\Query
      */
     public function createQuery(string $class) : Query

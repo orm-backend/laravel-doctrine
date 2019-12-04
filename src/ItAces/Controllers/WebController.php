@@ -6,7 +6,7 @@ use Doctrine\ORM\AbstractQuery;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controller;
 use ItAces\Repositories\Repository;
-use LaravelDoctrine\ORM\Pagination\PaginatorAdapter;
+use ItAces\ORM\PaginatorAdapter;
 
 abstract class WebController extends Controller
 {
@@ -17,9 +17,9 @@ abstract class WebController extends Controller
      */
     protected $repository;
     
-    public function __construct(Repository $repository)
+    public function __construct()
     {
-        $this->repository = $repository;
+        $this->repository = new Repository;
         
         if (auth()->id() && auth()->user()->isAdmin()) {
             $this->repository->em()->getFilters()->disable('softdelete');
@@ -31,16 +31,15 @@ abstract class WebController extends Controller
      * @param int           $perPage
      * @param string        $page
      * @param bool          $fetchJoinCollection
-     *
      * @return \Illuminate\Pagination\LengthAwarePaginator
      */
-    protected function paginate(AbstractQuery $query, int $perPage = 15, string $pageName = 'page', bool $fetchJoinCollection = null) : LengthAwarePaginator
+    protected function paginate(AbstractQuery $query, int $perPage = 15, string $pageName = 'page', bool $fetchJoinCollection = false) : LengthAwarePaginator
     {
         return PaginatorAdapter::fromRequest(
             $query,
             $perPage,
             $pageName,
-            $fetchJoinCollection === true
+            $fetchJoinCollection
         )->make();
     }
     

@@ -2,12 +2,12 @@
 
 namespace ItAces\Json;
 
-use JsonSerializable;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
-use ItAces\ORM\Entities\EntityBase;
 use ItAces\ORM\DevelopmentException;
+use ItAces\ORM\Entities\EntityBase;
+use JsonSerializable;
 
 /**
  * 

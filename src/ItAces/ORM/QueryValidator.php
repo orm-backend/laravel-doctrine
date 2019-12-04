@@ -65,12 +65,8 @@ class QueryValidator
      * @param string $referenceOrAlias
      * @throws \ItAces\ORM\DevelopmentException
      */
-    public function validateFieldForOrder(string $referenceOrAlias)
+    public function validateFieldOrAlias(string $referenceOrAlias)
     {
-        if (strpos($referenceOrAlias, '-') === 0) {
-            $referenceOrAlias = substr($referenceOrAlias, 1);
-        }
-        
         $targetEntity = $this->class;
         $pieces = explode('.', $referenceOrAlias);
         
@@ -142,7 +138,7 @@ class QueryValidator
                 throw new DevelopmentException("Entity fields cannot be specified in a select.");
             }
             
-            throw new DevelopmentException("Unknown entity reference '{$targetField}' in '{$reference}'.");
+            throw new DevelopmentException("Unknown entity reference '{$targetField}' in '{$referenceOrAlias}'.");
         }
     }
     

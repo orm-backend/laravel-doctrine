@@ -85,7 +85,7 @@ class QueryFactory
             return static::fromPost($em, $class, $additionalParameters);
         }
         
-        return static::fromArray($em, $class, array_merge(request()->all(), $additionalParameters));
+        return static::fromArray($em, $class, array_merge_recursive(request()->all(), $additionalParameters));
     }
     
     /**
@@ -97,7 +97,7 @@ class QueryFactory
      */
     public static function fromGet(EntityManager $em, string $class, array $additionalParameters = []) : Query
     {
-        return static::fromArray($em, $class, array_merge(request()->query(), $additionalParameters));
+        return static::fromArray($em, $class, array_merge_recursive(request()->query(), $additionalParameters));
     }
     
     /**
@@ -109,7 +109,7 @@ class QueryFactory
      */
     public static function fromPost(EntityManager $em, string $class, array $additionalParameters = []) : Query
     {
-        return static::fromArray($em, $class, array_merge(request()->post(), $additionalParameters));
+        return static::fromArray($em, $class, array_merge_recursive(request()->post(), $additionalParameters));
     }
     
     /**

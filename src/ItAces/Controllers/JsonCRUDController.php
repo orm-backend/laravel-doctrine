@@ -5,7 +5,7 @@ namespace ItAces\Controllers;
 use Illuminate\Http\Request;
 use ItAces\Json\JsonCollectionSerializer;
 use ItAces\Json\JsonSerializer;
-use ItAces\Repositories\ApiRepository;
+use ItAces\Repositories\WithJoinsRepository;
 
 /**
  * 
@@ -28,17 +28,14 @@ class JsonCRUDController extends WebController
     
     /**
      *
-     * @var \ItAces\Repositories\ApiRepository
+     * @var \ItAces\Repositories\WithJoinsRepository
      */
-    protected $repository;
+    protected $withJoins;
     
-    public function __construct(ApiRepository $repository)
+    public function __construct()
     {
-        $this->repository = $repository;
-        
-        if (auth()->id() && auth()->user()->isAdmin()) {
-            $this->repository->em()->getFilters()->disable('softdelete');
-        }
+        parent::__construct();
+        $this->withJoins = new WithJoinsRepository(true);
     }
     
     /**
@@ -49,9 +46,9 @@ class JsonCRUDController extends WebController
     */
     public function search(Request $request)
     {
-        $paginator = $this->paginate($this->repository->createQuery($this->class))->appends($request->all());
+        $paginator = $this->paginate($this->withJoins->createQuery($this->class))->appends($request->all());
         
-        return response()->json( new JsonCollectionSerializer($this->repository->em(), $paginator, $this->additional), 200);
+        return response()->json( new JsonCollectionSerializer($this->withJoins->em(), $paginator, $this->additional), 200);
     }
     
     /**
@@ -64,10 +61,10 @@ class JsonCRUDController extends WebController
     {
         $data = $request->json()->all();
         $request->validate($this->class::getRequestValidationRules());
-        $instance = $this->repository->createOrUpdate($this->class, $data);
-        $this->repository->em()->flush();
+        $instance = $this->withJoins->createOrUpdate($this->class, $data);
+        $this->withJoins->em()->flush();
         
-        return response()->json( new JsonSerializer($this->repository->em(), $instance, $this->additional), 201);
+        return response()->json( new JsonSerializer($this->withJoins->em(), $instance, $this->additional), 201);
     }
     
     /**
@@ -78,9 +75,9 @@ class JsonCRUDController extends WebController
      */
     public function read(int $id)
     {
-        $instance = $this->repository->findOrFail($this->class, $id);
+        $instance = $this->withJoins->findOrFail($this->class, $id);
         
-        return response()->json( new JsonSerializer($this->repository->em(), $instance, $this->additional), 200);
+        return response()->json( new JsonSerializer($this->withJoins->em(), $instance, $this->additional), 200);
     }
     
     /**
@@ -94,10 +91,10 @@ class JsonCRUDController extends WebController
     {
         $data = $request->json()->all();
         $request->validate($this->class::getRequestValidationRules());
-        $instance = $this->repository->createOrUpdate($this->class, $data, $id);
-        $this->repository->em()->flush();
+        $instance = $this->withJoins->createOrUpdate($this->class, $data, $id);
+        $this->withJoins->em()->flush();
         
-        return response()->json( new JsonSerializer($this->repository->em(), $instance, $this->additional), 200);
+        return response()->json( new JsonSerializer($this->withJoins->em(), $instance, $this->additional), 200);
     }
     
     /**

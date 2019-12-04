@@ -130,6 +130,18 @@ class Query
             $this->qb->where($composite);
         }
         
+        // ORDER
+        foreach ($this->order as $field) {
+            if ($field instanceof DQLExpression) {
+                $order = $this->builder->createParameterByExpression($field);
+                $this->qb->add('orderBy', $order, true);
+                continue;
+            }
+            
+            $order = $this->buildOrder($field);
+            $this->qb->addOrderBy($order);
+        }
+        
         // JOIN
         foreach ($this->join as $reference => $alias) {
             $this->qb->leftJoin($reference, $alias);
@@ -138,20 +150,7 @@ class Query
         foreach ($this->builder->getParameters() as $parameter) {
             $this->qb->setParameter($parameter->getName(), $parameter->getValue(), $parameter->getType());
         }
-        
-        foreach ($this->order as $field) {
-            if ($field instanceof DQLExpression) {
-                $order = $this->builder->createParameterByExpression($field);
-                $this->qb->add('orderBy', $order, true);
-                continue;
-            }
-            
-            $this->validator->validateFieldForOrder($field);
-            $alias = $this->helper->fieldToAlias($field);
-            $order = $this->buildOrder($alias);
-            $this->qb->addOrderBy($order);
-        }
-        
+
         //dd($this->qb->getQuery()->getDQL(), end($this->parameters));
         
         return $this->qb;
@@ -205,19 +204,25 @@ class Query
     
     /**
      * 
-     * @param string $alias
+     * @param string $field
      * @return OrderBy
      */
-    protected function buildOrder(string $alias) : OrderBy
+    protected function buildOrder(string $field) : OrderBy
     {
-        $operator = 'asc';
+        $direction = 'asc';
         
-        if (strpos($alias, '-') === 0) {
-            $operator = 'desc';
-            $alias = substr($alias, 1);
+        if (strpos($field, '-') === 0) {
+            $direction = 'desc';
+            $field = substr($field, 1);
         }
         
-        return call_user_func_array([$this->qb->expr(), $operator], [$alias]);
+        $this->validator->validateFieldOrAlias($field);
+        $reference = $this->helper->fieldToReference($field);
+        $alias = $this->helper->referenceToAlias($reference);
+        $this->addJoinIfNeed($reference, $alias);
+        $alias = $this->helper->fieldToAlias($field);
+        
+        return call_user_func_array([$this->qb->expr(), $direction], [$alias]);
     }
     
     /**
