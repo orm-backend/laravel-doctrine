@@ -7,7 +7,7 @@ namespace ItAces\Repositories;
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
-class SmartJoinsRepository extends WithJoinsRepository
+class JoinAwareRepository extends WithJoinsRepository
 {
     
     /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace ItAces\ORM;
+namespace ItAces\Pagination;
 
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\Query;

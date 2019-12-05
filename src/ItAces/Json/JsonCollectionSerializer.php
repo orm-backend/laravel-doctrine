@@ -5,6 +5,7 @@ namespace ItAces\Json;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use JsonSerializable;
 
@@ -29,7 +30,7 @@ class JsonCollectionSerializer implements JsonSerializable
     
     /**
      * 
-     * @var string[]
+     * @var \Illuminate\Pagination\AbstractPaginator;
      */
     protected $paginator;
     
@@ -42,10 +43,10 @@ class JsonCollectionSerializer implements JsonSerializable
     /**
      * 
      * @param \Doctrine\ORM\EntityManager $em
-     * @param \Illuminate\Pagination\LengthAwarePaginator $paginator
+     * @param \Illuminate\Pagination\AbstractPaginator $paginator
      * @param string[] $additional
      */
-    public function __construct(EntityManager $em, LengthAwarePaginator $paginator, array $additional = [])
+    public function __construct(EntityManager $em, AbstractPaginator $paginator, array $additional = [])
     {
         $this->em = $em;
         $this->entities = $paginator->items();
@@ -80,21 +81,27 @@ class JsonCollectionSerializer implements JsonSerializable
         $collection = new \stdClass;
         $collection->data = [];
         $collection->links = [
-            'prev_page_url' => $this->paginator['prev_page_url'],
-            'next_page_url' => $this->paginator['next_page_url'],
+            'path' => $this->paginator['path'],
             'first_page_url' => $this->paginator['first_page_url'],
-            'last_page_url' => $this->paginator['last_page_url'],
+            'prev_page_url' => $this->paginator['prev_page_url'],
             'next_page_url' => $this->paginator['next_page_url']
         ];
         
+        if ($this->paginator instanceof LengthAwarePaginator) {
+            $collection->links['last_page_url'] = $this->paginator['last_page_url'];
+        }
+        
         $collection->meta = [
             'current_page' => $this->paginator['current_page'],
-            'last_page' => $this->paginator['last_page'],
             'per_page' => $this->paginator['per_page'],
             'from' => $this->paginator['from'],
-            'to' => $this->paginator['to'],
-            'total' => $this->paginator['total']
+            'to' => $this->paginator['to']
         ];
+        
+        if ($this->paginator instanceof LengthAwarePaginator) {
+            $collection->meta['last_page'] = $this->paginator['last_page'];
+            $collection->meta['total'] = $this->paginator['total'];
+        }
         
         foreach ($this->entities as $entity) {
             $serializer = new JsonSerializer($this->em, $entity, $this->additional);

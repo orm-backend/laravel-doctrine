@@ -46,7 +46,7 @@ class JsonCRUDController extends WebController
     */
     public function search(Request $request)
     {
-        $paginator = $this->paginate($this->withJoins->createQuery($this->class))->appends($request->all());
+        $paginator = $this->cursor($this->withJoins->createQuery($this->class))->appends($request->all());
         
         return response()->json( new JsonCollectionSerializer($this->withJoins->em(), $paginator, $this->additional), 200);
     }

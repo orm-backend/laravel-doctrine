@@ -56,11 +56,8 @@ class Repository
     public function getQuery(string $class, array $parameters = [], string $alias = null) : Query
     {
         $query = QueryFactory::fromArray($this->em, $class, $parameters, $alias)->createQueryBuilder()->getQuery();
-        
-        if (config('doctrine.cache.second_level')) {
-            $query->setCacheable(true);
-        }
-        
+        $this->enableCaches($query);
+
         return $query;
     }
     
@@ -73,10 +70,7 @@ class Repository
     public function createQuery(string $class, array $additionalParameters = []) : Query
     {
         $query = QueryFactory::fromRequest($this->em, $class, $additionalParameters)->createQueryBuilder()->getQuery();
-        
-        if (config('doctrine.cache.second_level')) {
-            $query->setCacheable(true);
-        }
+        $this->enableCaches($query);
         
         return $query;
     }
@@ -229,6 +223,22 @@ class Repository
             ->where("{$alias}.id IN (:ids)")
             ->setParameter('ids', $ids, Connection::PARAM_INT_ARRAY)
             ->getQuery();
+    }
+
+    protected function enableCaches(Query &$query)
+    {
+        // Second level cache
+        if (config('doctrine.cache.second_level')) {
+            $query->disableResultCache();
+            $query->setLifetime( env('DOCTRINE_CACHE_TTL', 3600) );
+            $query->setCacheable(true);
+        }
+        
+        // SQL cache
+        if (!config('app.debug')) {
+            $query->setQueryCacheLifetime(env('DOCTRINE_QUERY_CACHE_TTL', 3600));
+            $query->useQueryCache(true);
+        }
     }
 
 }
