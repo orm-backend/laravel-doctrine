@@ -4,7 +4,6 @@ namespace ItAces\Repositories;
 
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
-use ItAces\ORM\QueryFactory;
 use ItAces\ORM\Entities\EntityBase;
 
 /**
@@ -39,7 +38,7 @@ class WithJoinsRepository extends Repository
     {
         $parameters = $this->appendAdditionalParameters($class, $parameters, $alias);
         
-        return QueryFactory::fromArray($this->em, $class, $parameters, $alias)->createQueryBuilder()->getQuery();
+        return parent::getQuery($class, $parameters, $alias);
     }
     
     /**
@@ -47,11 +46,11 @@ class WithJoinsRepository extends Repository
      * {@inheritDoc}
      * @see \ItAces\Repositories\Repository::createQuery()
      */
-    public function createQuery(string $class) : Query
+    public function createQuery(string $class, array $additionalParameters = []) : Query
     {
-        $parameters = $this->appendAdditionalParameters($class);
+        $additionalParameters = $this->appendAdditionalParameters($class, $additionalParameters);
         
-        return QueryFactory::fromRequest($this->em, $class, $parameters)->createQueryBuilder()->getQuery();
+        return parent::createQuery($class, $additionalParameters);
     }
     
     /**

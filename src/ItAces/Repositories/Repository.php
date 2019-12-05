@@ -55,18 +55,30 @@ class Repository
      */
     public function getQuery(string $class, array $parameters = [], string $alias = null) : Query
     {
-        return QueryFactory::fromArray($this->em, $class, $parameters, $alias)->createQueryBuilder()->getQuery();
+        $query = QueryFactory::fromArray($this->em, $class, $parameters, $alias)->createQueryBuilder()->getQuery();
+        
+        if (config('doctrine.cache.second_level')) {
+            $query->setCacheable(true);
+        }
+        
+        return $query;
     }
     
     /**
      *
      * @param string $class
-     * @param bool $joinCollections
+     * @param array[] $additionalParameters
      * @return \Doctrine\ORM\Query
      */
-    public function createQuery(string $class) : Query
+    public function createQuery(string $class, array $additionalParameters = []) : Query
     {
-        return QueryFactory::fromRequest($this->em, $class)->createQueryBuilder()->getQuery();
+        $query = QueryFactory::fromRequest($this->em, $class, $additionalParameters)->createQueryBuilder()->getQuery();
+        
+        if (config('doctrine.cache.second_level')) {
+            $query->setCacheable(true);
+        }
+        
+        return $query;
     }
     
     /**

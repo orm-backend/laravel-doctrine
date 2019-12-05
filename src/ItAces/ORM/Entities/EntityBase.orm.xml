@@ -19,16 +19,19 @@
     <field name="updatedAt" type="datetime" column="updated_at" nullable="true"/>
     <field name="deletedAt" type="datetime" column="deleted_at" nullable="true"/>
     <many-to-one field="createdBy" target-entity="App\Model\User" fetch="LAZY">
+      <cache usage="NONSTRICT_READ_WRITE"/>
       <join-columns>
         <join-column name="created_by" referenced-column-name="id" nullable="false"/>
       </join-columns>
     </many-to-one>
     <many-to-one field="updatedBy" target-entity="App\Model\User" fetch="LAZY">
+      <cache usage="NONSTRICT_READ_WRITE"/>
       <join-columns>
         <join-column name="updated_by" referenced-column-name="id"/>
       </join-columns>
     </many-to-one>
     <many-to-one field="deletedBy" target-entity="App\Model\User" fetch="LAZY">
+      <cache usage="NONSTRICT_READ_WRITE"/>
       <join-columns>
         <join-column name="deleted_by" referenced-column-name="id"/>
       </join-columns>
