@@ -142,7 +142,13 @@ class QueryValidator
         }
     }
     
-    public function validateComparisonData(array $comparisonData)
+    /**
+     * 
+     * @param array $comparisonData
+     * @throws \ItAces\ORM\DevelopmentException
+     * @return bool
+     */
+    public function validateComparisonData(array $comparisonData) : bool
     {
         $fieldOrAlias = null;
         $operator = null;
@@ -157,7 +163,7 @@ class QueryValidator
                 throw new DevelopmentException("The argument must be instance of ItAces\DBAL\DQLExpression when used only one.");
             }
             
-            return;
+            return true;
         } else if ($length == 2) {
             [$fieldOrAlias, $operator] = $comparisonData;
             
@@ -189,6 +195,13 @@ class QueryValidator
             $supportedOperators = implode(', ', self::SUPPORTED);
             throw new DevelopmentException("Unsupported operator '{$operator}'. Allowed operators: {$supportedOperators}.");
         }
+        
+        // Skip empty strings and nulls
+        if (is_null($value) && $operator != 'isNull' && $operator != 'isNotNull') {
+            return false;
+        }
+        
+        return true;
     }
     
 }

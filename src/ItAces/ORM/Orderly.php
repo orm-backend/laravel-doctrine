@@ -13,9 +13,6 @@ use Doctrine\DBAL\Types\Types;
  */
 class Orderly
 {
-
-    const SANITIZE_STRING_FLAG = FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_BACKTICK;
-    
     
     /**
      * 
@@ -25,13 +22,12 @@ class Orderly
      */
     public function sanitizeString(array $fieldMetadata, string $value = null)
     {
-        // What TODO with nuls and empty strings?
         if (is_null($value)) {
             return $value;
         }
 
-        $value = filter_var(trim($value), FILTER_SANITIZE_SPECIAL_CHARS, self::SANITIZE_STRING_FLAG);
-        
+        $value = filter_var(trim($value), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_AMP);
+        //dd($value);
         if ($fieldMetadata['type'] == 'string' && $fieldMetadata['length']) {
             $value = mb_substr($value, 0, $fieldMetadata['length']);
         }

@@ -5,7 +5,6 @@ namespace ItAces\ORM;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\Query\Expr\Composite;
 use Doctrine\ORM\Query\Expr\OrderBy;
 use Illuminate\Support\Arr;
 use ItAces\DBAL\DQLExpression;
@@ -126,8 +125,11 @@ class Query
         
         // WHERE
         if ($this->filter) {
-            $composite = $this->buildCriteria($this->filter);
-            $this->qb->where($composite);
+            $criteria = $this->buildCriteria($this->filter);
+            
+            if ($criteria) {
+                $this->qb->where($criteria);
+            }
         }
         
         // ORDER
@@ -229,9 +231,9 @@ class Query
      *
      * @param array $criteriaData
      * @throws \ItAces\ORM\DevelopmentException
-     * @return \Doctrine\ORM\Query\Expr\Composite
+     * @return \Doctrine\ORM\Query\Expr\Composite|boolean
      */
-    protected function buildCriteria(array $criteriaData) : Composite
+    protected function buildCriteria(array $criteriaData)
     {
         if (!$criteriaData || Arr::isAssoc($criteriaData)) {
             throw new DevelopmentException('The passed argument must be a numeric array.');
@@ -248,6 +250,10 @@ class Query
         }
         
         $comparisons = $this->buildComparisons($criteriaData);
+        
+        if (!$comparisons) {
+            return false;
+        }
         
         return $composite->addMultiple($comparisons);
     }
@@ -286,12 +292,24 @@ class Query
         
         foreach ($comparisonsData as $comparisonOrCriteria) {
             if ($this->isCriteria($comparisonOrCriteria)) {
-                $comparisons[] = $this->buildCriteria($comparisonOrCriteria);
+                $comparison = $this->buildCriteria($comparisonOrCriteria);
+                
+                if (!$comparison) {
+                    continue;
+                }
+                
+                $comparisons[] = $comparison;
             } else {
-                $comparisons[] = $this->buildComparison($comparisonOrCriteria);
+                $comparison = $this->buildComparison($comparisonOrCriteria);
+                
+                if (!$comparison) {
+                    continue;
+                }
+                
+                $comparisons[] = $comparison;
             }
         }
-        
+
         return $comparisons;
     }
     
@@ -299,7 +317,7 @@ class Query
      *
      * @param array $comparisonData
      * @throws \ItAces\ORM\DevelopmentException
-     * @return \Doctrine\ORM\Query\Expr\Comparison|string
+     * @return \Doctrine\ORM\Query\Expr\Comparison|string|boolean
      */
     protected function buildComparison(array $comparisonData)
     {
@@ -308,7 +326,10 @@ class Query
         $value = null;
         $adonceValue = null;
         
-        $this->validator->validateComparisonData($comparisonData);
+        if (!$this->validator->validateComparisonData($comparisonData)) {
+            return false;
+        }
+        
         $length = count($comparisonData);
 
         if ($length == 1) {
@@ -333,11 +354,11 @@ class Query
             $alias = $this->helper->fieldToAlias($field);
             $this->addJoinIfNeed($referenceOrAlias, $alias);
         }
-        
+
         if ($value === null) {
             return call_user_func_array([$this->qb->expr(), $operator], [$field]);
         }
-
+        
         $parameterName = $this->builder->createParameter($field, $value);
 
         if ($adonceValue) {
