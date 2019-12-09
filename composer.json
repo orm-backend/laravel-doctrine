@@ -19,6 +19,11 @@
     "require-dev": {
     },
     "autoload": {
-        "psr-4": { "ItAces\\": "src/ItAces" }
+        "psr-4": {
+        	"ItAces\\": "src/ItAces"
+        },
+        "files": [
+            "src/functions.php"
+        ]
     }
 }

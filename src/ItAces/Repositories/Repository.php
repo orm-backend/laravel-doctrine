@@ -64,12 +64,13 @@ class Repository
     /**
      *
      * @param string $class
-     * @param array[] $additionalParameters
+     * @param array[] $parameters
+     * @param string $alias
      * @return \Doctrine\ORM\Query
      */
-    public function createQuery(string $class, array $additionalParameters = []) : Query
+    public function createQuery(string $class, array $parameters = [], string $alias = null) : Query
     {
-        $query = QueryFactory::fromRequest($this->em, $class, $additionalParameters)->createQueryBuilder()->getQuery();
+        $query = QueryFactory::fromRequest($this->em, $class, $parameters, $alias)->createQueryBuilder()->getQuery();
         $this->enableCaches($query);
         
         return $query;

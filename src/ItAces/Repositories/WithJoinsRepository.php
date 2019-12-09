@@ -24,7 +24,7 @@ class WithJoinsRepository extends Repository
      * 
      * @param bool $joinCollections
      */
-    public function __construct(bool $joinCollections = true) {
+    public function __construct(bool $joinCollections = false) {
         parent::__construct();
         $this->joinCollections = $joinCollections;
     }
@@ -46,11 +46,11 @@ class WithJoinsRepository extends Repository
      * {@inheritDoc}
      * @see \ItAces\Repositories\Repository::createQuery()
      */
-    public function createQuery(string $class, array $additionalParameters = []) : Query
+    public function createQuery(string $class, array $parameters = [], string $alias = null) : Query
     {
-        $additionalParameters = $this->appendAdditionalParameters($class, $additionalParameters);
+        $parameters = $this->appendAdditionalParameters($class, $parameters, $alias);
         
-        return parent::createQuery($class, $additionalParameters);
+        return parent::createQuery($class, $parameters, $alias);
     }
     
     /**

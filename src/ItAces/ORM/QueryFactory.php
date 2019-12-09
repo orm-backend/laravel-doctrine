@@ -54,10 +54,11 @@ class QueryFactory
      * @param string $class
      * @param string $json
      * @param array $additionalParameters
+     * @param string $alias
      * @throws \ItAces\ORM\DevelopmentException
      * @return \ItAces\ORM\Query
      */
-    public static function fromJson(EntityManager $em, string $class, string $json, array $additionalParameters = []) : Query
+    public static function fromJson(EntityManager $em, string $class, string $json, array $additionalParameters = [], string $alias = null) : Query
     {
         $parameters = json_decode($json, true, null, JSON_BIGINT_AS_STRING);
         
@@ -65,7 +66,7 @@ class QueryFactory
             throw new DevelopmentException('The json cannot be decoded or the encoded data is deeper than the recursion limit.');
         }
         
-        return static::fromArray($em, $class, array_merge($parameters, $additionalParameters));
+        return static::fromArray($em, $class, array_merge($parameters, $additionalParameters), $alias);
     }
     
     /**
@@ -73,19 +74,20 @@ class QueryFactory
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
      * @param array $additionalParameters
+     * @param string $alias
      * @return \ItAces\ORM\Query
      */
-    public static function fromRequest(EntityManager $em, string $class, array $additionalParameters = []) : Query
+    public static function fromRequest(EntityManager $em, string $class, array $additionalParameters = [], string $alias = null) : Query
     {
         if (request()->isMethod('GET')) {
-            return static::fromGet($em, $class, $additionalParameters);
+            return static::fromGet($em, $class, $additionalParameters, $alias);
         } else if (request()->isMethod('PUT')) {
-            return static::fromPut($em, $class, $additionalParameters);
+            return static::fromPut($em, $class, $additionalParameters, $alias);
         } else if (request()->isMethod('POST')) {
-            return static::fromPost($em, $class, $additionalParameters);
+            return static::fromPost($em, $class, $additionalParameters, $alias);
         }
         
-        return static::fromArray($em, $class, array_merge_recursive(request()->all(), $additionalParameters));
+        return static::fromArray($em, $class, array_merge_recursive(request()->all(), $additionalParameters), $alias);
     }
     
     /**
@@ -93,11 +95,12 @@ class QueryFactory
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
      * @param array $additionalParameters
+     * @param string $alias
      * @return \ItAces\ORM\Query
      */
-    public static function fromGet(EntityManager $em, string $class, array $additionalParameters = []) : Query
+    public static function fromGet(EntityManager $em, string $class, array $additionalParameters = [], string $alias = null) : Query
     {
-        return static::fromArray($em, $class, array_merge_recursive(request()->query(), $additionalParameters));
+        return static::fromArray($em, $class, array_merge_recursive(request()->query(), $additionalParameters), $alias);
     }
     
     /**
@@ -105,11 +108,12 @@ class QueryFactory
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
      * @param array $additionalParameters
+     * @param string $alias
      * @return \ItAces\ORM\Query
      */
-    public static function fromPost(EntityManager $em, string $class, array $additionalParameters = []) : Query
+    public static function fromPost(EntityManager $em, string $class, array $additionalParameters = [], string $alias = null) : Query
     {
-        return static::fromArray($em, $class, array_merge_recursive(request()->post(), $additionalParameters));
+        return static::fromArray($em, $class, array_merge_recursive(request()->post(), $additionalParameters), $alias);
     }
     
     /**
@@ -117,11 +121,12 @@ class QueryFactory
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
      * @param array $additionalParameters
+     * @param string $alias
      * @return \ItAces\ORM\Query
      */
-    public static function fromPut(EntityManager $em, string $class, array $additionalParameters = []) : Query
+    public static function fromPut(EntityManager $em, string $class, array $additionalParameters = [], string $alias = null) : Query
     {
-        return static::fromJson($em, $class, request()->json(), $additionalParameters);
+        return static::fromJson($em, $class, request()->json(), $additionalParameters, $alias);
     }
     
 }
