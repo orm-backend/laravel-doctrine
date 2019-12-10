@@ -49,20 +49,22 @@ class FieldContainer
     public static function readRequest(array $data) : array
     {
         $map = [];
-        
+
         foreach ($data as $key => $value) {
-            if (!Str::contains($key, '_')) {
+            $lastUnderscore = strripos($key, '_');
+            
+            if (!$lastUnderscore) {
                 continue;
             }
             
-            [$classUrlName, $fieldName] = explode('_', $key);
+            $classUrlName = substr($key, 0, strripos($key, '_'));
+            $fieldName = substr($key, strripos($key, '_') + 1);
+            $className = Helper::classFromUlr($classUrlName);
             
             if (!$classUrlName || !$fieldName) {
                 continue;
             }
-            
-            $className = Helper::classFromUlr($classUrlName);
-            
+
             if (!array_key_exists($className, $map)) {
                 $map[$className] = [];
             }
@@ -132,7 +134,7 @@ class FieldContainer
     public function buildMetaFields(ClassMetadata $classMetadata)
     {
         $field = MetaField::getInstance($classMetadata, 'id');
-        $this->fields[$field->fullname] = $field;
+        $this->fields[] = $field;
         
         foreach ($classMetadata->fieldNames as $fieldName) {
             if (array_search($fieldName, self::INTERNAL_FIELDS) !== false) {
@@ -140,7 +142,7 @@ class FieldContainer
             }
             
             $field = MetaField::getInstance($classMetadata, $fieldName);
-            $this->fields[$field->fullname] = $field;
+            $this->fields[] = $field;
         }
         
         foreach (self::INTERNAL_FIELDS as $fieldName) {
@@ -149,7 +151,7 @@ class FieldContainer
             }
             
             $field = MetaField::getInstance($classMetadata, $fieldName);
-            $this->fields[$field->fullname] = $field;
+            $this->fields[] = $field;
         }
     }
 

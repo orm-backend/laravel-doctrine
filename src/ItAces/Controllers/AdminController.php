@@ -3,6 +3,7 @@
 namespace ItAces\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use ItAces\Utility\Helper;
 use ItAces\Utility\Str;
@@ -53,6 +54,13 @@ class AdminController extends WebController
                 return ($a['name'] < $b['name']) ? -1 : 1;
             });
         }
+    }
+    
+    public function index()
+    {
+        return view('admin.index', [
+            'menu' => $this->menu
+        ]);
     }
     
     /**
@@ -109,7 +117,6 @@ class AdminController extends WebController
     {
         $className = Helper::classFromUlr($classUrlName);
         $classShortName = (new \ReflectionClass($className))->getShortName();
-        $alias = lcfirst($classShortName);
         $classMetadata = $this->repository->em()->getClassMetadata($className);
         $container = new FieldContainer($this->repository->em());
         
@@ -131,6 +138,35 @@ class AdminController extends WebController
     }
     
     /**
+     * Display a listing of the resource.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param string $classUrlName
+     * @return \Illuminate\Http\Response
+     */
+    public function create(Request $request, string $classUrlName)
+    {
+        $className = Helper::classFromUlr($classUrlName);
+        $classShortName = (new \ReflectionClass($className))->getShortName();
+        $classMetadata = $this->repository->em()->getClassMetadata($className);
+        $container = new FieldContainer($this->repository->em());
+        $container->buildMetaFields($classMetadata);
+        
+        $meta = [
+            'class' => $className,
+            'title' => __( Str::pluralCamelWords($classShortName, 1) ),
+            'classUrlName' => $classUrlName
+        ];
+        
+        return view('admin.entity.create', [
+            'menu' => $this->menu,
+            'container' => $container,
+            'meta' => $meta,
+            'formAction' => route('admin.entity.store', [$classUrlName])
+        ]);
+    }
+    
+    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -142,15 +178,13 @@ class AdminController extends WebController
     {
         $map = FieldContainer::readRequest($request->post());
         $className = Helper::classFromUlr($classUrlName);
-        $request->validate($className::getRequestValidationRules());
-        $this->withJoins->createOrUpdate($className, $map[$className], $id);
-        
-//         foreach ($map as $className => $data) {
-//             $request->validate($className::getRequestValidationRules());
-//             $this->withJoins->createOrUpdate($className, $data, $id);
-//         }
+        $classShortName = (new \ReflectionClass($className))->getShortName();
+        $alias = lcfirst($classShortName);
+
 
         try {
+            Validator::make($map[$className], $className::getRequestValidationRules())->validate();
+            $this->withJoins->createOrUpdate($className, $map[$className], $id);
             $this->withJoins->em()->flush();
         } catch (ValidationException $e) {
             $messages = $e->validator->getMessageBag()->getMessages();
@@ -164,7 +198,44 @@ class AdminController extends WebController
             throw ValidationException::withMessages($messages);
         }
         
-        return redirect()->route('admin.entity.search', $classUrlName)->with('success', __('Entity updated successfully.'));
+        $url = route('admin.entity.search', $classUrlName);
+        
+        return redirect($url.'?order[]=-'.$alias.'.updatedAt')->with('success', __('Record updated successfully.'));
+    }
+    
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param string $classUrlName
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request, string $classUrlName)
+    {
+        $map = FieldContainer::readRequest($request->post());
+        $className = Helper::classFromUlr($classUrlName);
+        $classShortName = (new \ReflectionClass($className))->getShortName();
+        $alias = lcfirst($classShortName);
+
+        try {
+            Validator::make($map[$className], $className::getRequestValidationRules())->validate();
+            $this->withJoins->createOrUpdate($className, $map[$className]);
+            $this->withJoins->em()->flush();
+        } catch (ValidationException $e) {
+            $messages = $e->validator->getMessageBag()->getMessages();
+            
+            foreach ($messages as $key => $value) {
+                $newKey = $classUrlName.'.'.$key;
+                $messages[$newKey] = $value;
+                unset($messages[$key]);
+            }
+
+            throw ValidationException::withMessages($messages);
+        }
+        
+        $url = route('admin.entity.search', $classUrlName);
+        
+        return redirect($url.'?order[]=-'.$alias.'.createdAt')->with('success', __('Record created successfully.'));
     }
 
 }

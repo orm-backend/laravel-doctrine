@@ -236,7 +236,11 @@ abstract class EntityBase implements SoftDeleteable
     public function onBeforeUpdate(LifecycleEventArgs $event)
     {
         $this->updatedAt = now();
-        $this->updatedBy = Auth::user();
+        
+        if (Auth::id()) {
+            $this->updatedBy = Auth::user();
+        }
+        
         $this->validate();
     }
 
@@ -277,7 +281,7 @@ abstract class EntityBase implements SoftDeleteable
             $method = 'get' . ucfirst($field);
             $attributes[$field] = $this->$method();
         }
-
+        
         $validator = Validator::make($attributes, $rules);
         $validator->validate();
     }

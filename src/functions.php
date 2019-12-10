@@ -11,7 +11,7 @@ if (! function_exists('oldd')) {
     function oldd($key = null, $default = null)
     {
         if ($key) {
-            $key = str_replace('_', '.', $key);
+            $key = str_replace('.', '_', $key);
         }
         
         return app('request')->old($key, $default);

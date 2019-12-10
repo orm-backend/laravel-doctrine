@@ -14,8 +14,6 @@ class BaseField extends MetaField
 {
 
     public $value;
-
-    public $disabled = false;
     
     /**
      * 
@@ -29,10 +27,6 @@ class BaseField extends MetaField
         $instance = parent::getInstance($classMetadata, $fieldName);
         $instance->value = $classMetadata->getFieldValue($entity, $instance->name);
         
-        if (array_search($instance->name, FieldContainer::INTERNAL_FIELDS) !== false) {
-            $instance->disabled = true;
-        }
-
         return $instance;
     }
 

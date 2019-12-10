@@ -1,6 +1,7 @@
 {
     "name": "it-aces/laravel-doctrine",
     "description": "Support for Doctrine integration",
+    "type": "library",
     "license": "MIT",
     "keywords": ["it-aces", "laravel-doctrine", "laravel", "doctrine"],
     "authors": [

@@ -22,6 +22,8 @@ class MetaField
     
     public $fullname;
     
+    public $aliasname;
+    
     public $title;
     
     public $type;
@@ -33,6 +35,8 @@ class MetaField
     public $width;
     
     public $autohide;
+    
+    public $disabled = false;
     
     /**
      * 
@@ -47,8 +51,8 @@ class MetaField
         $instance->name = $fieldName;
         $instance->class = $classMetadata->name;
         $classShortName = (new \ReflectionClass($instance->class))->getShortName();
-        //$alias = lcfirst($classShortName);
-        $instance->fullname = Helper::classToUlr($instance->class) .'.'.$instance->name;
+        $instance->aliasname = lcfirst($classShortName) .'.'. $instance->name;
+        $instance->fullname = Helper::classToUlr($instance->class) .'.'. $instance->name;
         $instance->title = $instance->name == 'id' ? 'ID' : __(Str::pluralCamelWords( ucfirst($instance->name), 1));
 
         $fieldMapping = $classMetadata->getFieldMapping($instance->name);
@@ -61,7 +65,7 @@ class MetaField
         
         $requestedOrder = $instance->getRequestedOrder();
         
-        if ($requestedOrder && $requestedOrder['field'] == $instance->fullname) {
+        if ($requestedOrder && $requestedOrder['field'] == $instance->aliasname) {
             $instance->sortable = $requestedOrder['direction'];
         } else {
             $instance->sortable = empty($fieldMapping['length']) || $fieldMapping['length'] <= 255 ? 'true' : 'false';
@@ -70,6 +74,10 @@ class MetaField
         $instance->textalign = $instance->type == 'number' ? 'right' : 'left';
         $instance->width = $instance->type == 'number' ? 50 : 'auto';
         $instance->autohide = $instance->name != 'id' && !$instance->name != 'name' && !$instance->name != 'code';
+        
+        if (array_search($instance->name, FieldContainer::INTERNAL_FIELDS) !== false) {
+            $instance->disabled = true;
+        }
         
         return $instance;
     }

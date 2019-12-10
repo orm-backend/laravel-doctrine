@@ -2,7 +2,9 @@
 
 namespace ItAces\ORM;
 
+use Illuminate\Contracts\Support\Responsable;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Exception;
 
 /**
@@ -10,7 +12,7 @@ use Exception;
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
-class DevelopmentException extends Exception implements HttpExceptionInterface
+class DevelopmentException extends Exception implements HttpExceptionInterface, Responsable
 {
     
     protected $status = 400;
@@ -33,6 +35,20 @@ class DevelopmentException extends Exception implements HttpExceptionInterface
     public function getHeaders()
     {
         return [];
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \Illuminate\Contracts\Support\Responsable::toResponse()
+     */
+    public function toResponse($request)
+    {
+        if (config('app.debug')) {
+            throw new Exception($this->message);
+        }
+        
+        throw new HttpException(400);
     }
 
 }
