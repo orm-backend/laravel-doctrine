@@ -35,7 +35,7 @@ abstract class WebController extends Controller
      * @param bool          $fetchJoinCollection
      * @return \Illuminate\Pagination\LengthAwarePaginator
      */
-    protected function paginate(Query $query, int $perPage = 10, string $pageName = 'page', bool $fetchJoinCollection = false) : LengthAwarePaginator
+    protected function paginate(Query $query, int $perPage = 20, string $pageName = 'page', bool $fetchJoinCollection = false) : LengthAwarePaginator
     {
         return PaginatorAdapter::fromRequest(
             $query,
@@ -52,7 +52,7 @@ abstract class WebController extends Controller
      * @param bool          $fetchJoinCollection
      * @return \Illuminate\Pagination\Paginator
      */
-    protected function cursor(Query $query, int $perPage = 10, string $pageName = 'page', bool $fetchJoinCollection = false) : Paginator
+    protected function cursor(Query $query, int $perPage = 20, string $pageName = 'page', bool $fetchJoinCollection = false) : Paginator
     {
         return CursorAdapter::fromRequest(
             $query,

@@ -2,7 +2,6 @@
 
 namespace ItAces\View;
 
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
@@ -13,29 +12,78 @@ use ItAces\Utility\Str;
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
-class MetaField
+abstract class MetaField
 {
+    /**
+     * 
+     * @var mixed
+     */
+    public $value;
     
+    /**
+     * 
+     * @var string
+     */
     public $class;
     
+    /**
+     *
+     * @var string
+     */
     public $name;
     
+    /**
+     *
+     * @var string
+     */
     public $fullname;
     
+    /**
+     *
+     * @var string
+     */
     public $aliasname;
     
+    /**
+     *
+     * @var string
+     */
     public $title;
     
+    /**
+     *
+     * @var string
+     */
     public $type;
     
+    /**
+     *
+     * @var string
+     */
     public $sortable;
     
+    /**
+     *
+     * @var string
+     */
     public $textalign;
     
+    /**
+     *
+     * @var string|integer
+     */
     public $width;
     
+    /**
+     * 
+     * @var boolean
+     */
     public $autohide;
     
+    /**
+     * 
+     * @var boolean
+     */
     public $disabled = false;
     
     /**
@@ -47,71 +95,57 @@ class MetaField
      */
     public static function getInstance(ClassMetadata $classMetadata, string $fieldName, EntityBase $entity = null)
     {
-        $instance = new static();
-        $instance->name = $fieldName;
-        $instance->class = $classMetadata->name;
-        $classShortName = (new \ReflectionClass($instance->class))->getShortName();
-        $instance->aliasname = lcfirst($classShortName) .'.'. $instance->name;
-        $instance->fullname = Helper::classToUlr($instance->class) .'.'. $instance->name;
-        $instance->title = $instance->name == 'id' ? 'ID' : __(Str::pluralCamelWords( ucfirst($instance->name), 1));
-
-        $fieldMapping = $classMetadata->getFieldMapping($instance->name);
-        $length = isset($fieldMapping['length']) ? $fieldMapping['length'] : null;
-        $instance->type = $instance->getHtmlType($fieldMapping['type'], $length);
-        
-        if (array_search($instance->name, FieldContainer::INTERNAL_FIELDS) !== false) {
-            $instance->disabled = true;
-        }
-        
+        $instance = new static($classMetadata, $fieldName);
+        $instance->type = $instance->getHtmlType();
+        $instance->textalign = $instance->type == 'number' ? 'right' : 'left';
+        $instance->width = $instance->type == 'number' ? 50 : 'auto';
         $requestedOrder = $instance->getRequestedOrder();
         
         if ($requestedOrder && $requestedOrder['field'] == $instance->aliasname) {
             $instance->sortable = $requestedOrder['direction'];
         } else {
-            $instance->sortable = empty($fieldMapping['length']) || $fieldMapping['length'] <= 255 ? 'true' : 'false';
+            $instance->sortable = $instance->getDefaultSortable();
         }
-        
-        $instance->textalign = $instance->type == 'number' ? 'right' : 'left';
-        $instance->width = $instance->type == 'number' ? 50 : 'auto';
-        $instance->autohide = $instance->name != 'id' && !$instance->name != 'name' && !$instance->name != 'code';
-        
-        if (array_search($instance->name, FieldContainer::INTERNAL_FIELDS) !== false) {
-            $instance->disabled = true;
-        }
-        
+
         return $instance;
     }
     
-    public function getHtmlType(string $doctrineType, int $length = null)
+    /**
+     * 
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
+     * @param string $fieldName
+     */
+    protected function __construct(ClassMetadata $classMetadata, string $fieldName)
     {
-        switch ($doctrineType) {
-            case Types::INTEGER:
-            case Types::SMALLINT:
-                // TODO case Types::FLOAT:
-                // TODO case Types::DECIMAL:
-                return 'number';
-            case Types::BOOLEAN:
-                return 'checkbox';
-            case Types::DATE_MUTABLE:
-                return 'date';
-            case Types::DATETIME_MUTABLE:
-            case Types::DATETIMETZ_MUTABLE:
-                return 'datetime';
-            case Types::TIME_MUTABLE:
-                return 'time';
-                break;
-            case Types::TEXT:
-                return 'textarea';
-                break;
-            case Types::STRING:
-                return !$length || $length > 255 ? 'textarea' : 'text';
-                break;
-        }
+        $this->name = $fieldName;
+        $this->class = $classMetadata->name;
+        $this->aliasname = lcfirst((new \ReflectionClass($this->class))->getShortName()) .'.'. $this->name;
+        $this->fullname = Helper::classToUlr($this->class) .'.'. $this->name;
+        $this->title = $this->name == 'id' ? 'ID' : __(Str::pluralCamelWords( ucfirst($this->name), 1));
+        $this->autohide = $this->name != 'id' && !$this->name != 'name' && !$this->name != 'code';
         
-        return 'text';
+        if (array_search($this->name, FieldContainer::INTERNAL_FIELDS) !== false) {
+            $this->disabled = true;
+        }
     }
     
-    public function getRequestedOrder()
+    /**
+     * 
+     * @return string
+     */
+    protected abstract function getHtmlType();
+    
+    /**
+     *
+     * @return string
+     */
+    protected abstract function getDefaultSortable();
+    
+    /**
+     * 
+     * @return NULL|string[]
+     */
+    protected function getRequestedOrder()
     {
         $field = request()->get('order');
         

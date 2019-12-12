@@ -13,6 +13,10 @@ use ItAces\Repositories\WithJoinsRepository;
 class AdminController extends WebController
 {
     
+    /**
+     * 
+     * @var array
+     */
     protected $menu = [];
     
     /**
@@ -74,6 +78,12 @@ class AdminController extends WebController
     {
         $className = Helper::classFromUlr($classUrlName);
         $classShortName = (new \ReflectionClass($className))->getShortName();
+        $adapter = 'App\\Http\\Admin\\Adapters\\'.$classShortName.'Adapter';
+        
+        if (method_exists($adapter, 'listingReplacement')) {
+            return $adapter::listingReplacement($this->menu, $request);
+        }
+        
         $classMetadata = $this->repository->em()->getClassMetadata($className);
         $alias = lcfirst($classShortName);
         $container = new FieldContainer($this->repository->em());
@@ -107,16 +117,22 @@ class AdminController extends WebController
     
     /**
      * Display a listing of the resource.
-     * 
+     *
      * @param  \Illuminate\Http\Request  $request
      * @param string $classUrlName
      * @param integer $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(Request $request, string $classUrlName, int $id)
+    public function details(Request $request, string $classUrlName, int $id)
     {
         $className = Helper::classFromUlr($classUrlName);
         $classShortName = (new \ReflectionClass($className))->getShortName();
+        $adapter = 'App\\Http\\Admin\\Adapters\\'.$classShortName.'Adapter';
+        
+        if (method_exists($adapter, 'detailsReplacement')) {
+            return $adapter::detailsReplacement($this->menu, $id);
+        }
+        
         $classMetadata = $this->repository->em()->getClassMetadata($className);
         $container = new FieldContainer($this->repository->em());
         
@@ -127,6 +143,44 @@ class AdminController extends WebController
         ];
         
         $entity = $this->withJoins->findOrFail($className, $id);
+        $container->addEntity($entity);
+        
+        return view('admin.entity.details', [
+            'menu' => $this->menu,
+            'container' => $container,
+            'meta' => $meta,
+            'formAction' => route('admin.entity.update', [$classUrlName, $id])
+        ]);
+    }
+    
+    /**
+     * Display a listing of the resource.
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @param string $classUrlName
+     * @param integer $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Request $request, string $classUrlName, int $id)
+    {
+        $className = Helper::classFromUlr($classUrlName);
+        $entity = $this->withJoins->findOrFail($className, $id);
+        $classShortName = (new \ReflectionClass($className))->getShortName();
+        $adapter = 'App\\Http\\Admin\\Adapters\\'.$classShortName.'Adapter';
+        
+        if (method_exists($adapter, 'editingReplacement')) {
+            return $adapter::editingReplacement($this->menu, $entity);
+        }
+        
+        $classMetadata = $this->repository->em()->getClassMetadata($className);
+        $container = new FieldContainer($this->repository->em(), true);
+        
+        $meta = [
+            'class' => $className,
+            'title' => __( Str::pluralCamelWords($classShortName, 1) ),
+            'classUrlName' => $classUrlName
+        ];
+
         $container->addEntity($entity);
         
         return view('admin.entity.edit', [
@@ -148,8 +202,14 @@ class AdminController extends WebController
     {
         $className = Helper::classFromUlr($classUrlName);
         $classShortName = (new \ReflectionClass($className))->getShortName();
+        $adapter = 'App\\Http\\Admin\\Adapters\\'.$classShortName.'Adapter';
+        
+        if (method_exists($adapter, 'creatingReplacement')) {
+            return $adapter::creatingReplacement($this->menu);
+        }
+
         $classMetadata = $this->repository->em()->getClassMetadata($className);
-        $container = new FieldContainer($this->repository->em());
+        $container = new FieldContainer($this->repository->em(), true);
         $container->buildMetaFields($classMetadata);
         
         $meta = [
@@ -179,8 +239,13 @@ class AdminController extends WebController
         $map = FieldContainer::readRequest($request->post());
         $className = Helper::classFromUlr($classUrlName);
         $classShortName = (new \ReflectionClass($className))->getShortName();
+        $adapter = 'App\\Http\\Admin\\Adapters\\'.$classShortName.'Adapter';
+        
+        if (method_exists($adapter, 'updatingReplacement')) {
+            return $adapter::updatingReplacement($request, $id);
+        }
+        
         $alias = lcfirst($classShortName);
-
 
         try {
             Validator::make($map[$className], $className::getRequestValidationRules())->validate();
@@ -212,9 +277,15 @@ class AdminController extends WebController
      */
     public function store(Request $request, string $classUrlName)
     {
-        $map = FieldContainer::readRequest($request->post());
         $className = Helper::classFromUlr($classUrlName);
         $classShortName = (new \ReflectionClass($className))->getShortName();
+        $adapter = 'App\\Http\\Admin\\Adapters\\'.$classShortName.'Adapter';
+        
+        if (method_exists($adapter, 'storingReplacement')) {
+            return $adapter::storingReplacement($request);
+        }
+        
+        $map = FieldContainer::readRequest($request->post());
         $alias = lcfirst($classShortName);
 
         try {

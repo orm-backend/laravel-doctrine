@@ -2,7 +2,6 @@
 
 namespace ItAces\View;
 
-use ItAces\View\BaseField;
 
 /**
  * 
@@ -34,11 +33,11 @@ class WrappedEntity
     
     /**
      * 
-     * @param \ItAces\View\BaseField $field
+     * @param \ItAces\View\MetaField $field
      */
-    public function addField(BaseField $field)
+    public function addField(MetaField $field)
     {
-        $this->fields[] = $field;
+        $this->fields[$field->name] = $field;
     }
     
     /**
@@ -57,6 +56,15 @@ class WrappedEntity
     public function fields()
     {
         return $this->fields;
+    }
+    
+    /**
+     *
+     * @return \ItAces\View\BaseField
+     */
+    public function field(string $name)
+    {
+        return $this->fields[$name];
     }
 
 }

@@ -3,8 +3,8 @@ namespace ItAces\View;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use ItAces\ORM\Entities\EntityBase;
-use ItAces\Utility\Str;
 use ItAces\Utility\Helper;
 
 /**
@@ -14,7 +14,7 @@ use ItAces\Utility\Helper;
  */
 class FieldContainer
 {
-    const INTERNAL_FIELDS = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deleteBy'];
+    const INTERNAL_FIELDS = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedBy'];
     
     const FORBIDDEN_FIELDS = ['password', 'rememberToken'];
     
@@ -36,9 +36,21 @@ class FieldContainer
      */
     protected $em;
     
-    public function __construct(EntityManager $em)
+    /**
+     * 
+     * @var boolean
+     */
+    protected $fetchAllPosibleCollectionValues;
+    
+    /**
+     * 
+     * @param \Doctrine\ORM\EntityManager $em
+     * @param bool $fetchAllPosibleCollectionValues
+     */
+    public function __construct(EntityManager $em, bool $fetchAllPosibleCollectionValues = null)
     {
         $this->em = $em;
+        $this->fetchAllPosibleCollectionValues = $fetchAllPosibleCollectionValues;
     }
     
     /**
@@ -116,12 +128,42 @@ class FieldContainer
             $wrapped->addField(BaseField::getInstance($classMetadata, $fieldName, $entity));
         }
         
-        foreach (self::INTERNAL_FIELDS as $fieldName) {
-            if ($fieldName == 'id' || array_search($fieldName, $classMetadata->fieldNames) === false) {
+        foreach ($classMetadata->associationMappings as $associationMapping) {
+            if (array_search($associationMapping['fieldName'], self::INTERNAL_FIELDS) !== false) {
                 continue;
             }
             
-            $wrapped->addField(BaseField::getInstance($classMetadata, $fieldName, $entity));
+            if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
+                if (!$associationMapping['isOwningSide']) {
+                    continue;
+                }
+                
+                $wrapped->addField(ReferenceField::getInstance($classMetadata, $associationMapping['fieldName'], $entity));
+            } else if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
+                if (!$associationMapping['isOwningSide']) {
+                    continue;
+                }
+                
+                $collectionField = CollectionField::getInstance($classMetadata, $associationMapping['fieldName'], $entity);
+                
+                if ($this->fetchAllPosibleCollectionValues) {
+                    $collectionField->fetchAllValues();
+                }
+                
+                $wrapped->addField($collectionField);
+            }
+        }
+        
+        foreach (self::INTERNAL_FIELDS as $fieldName) {
+            if ($fieldName == 'id') {
+                continue;
+            }
+            
+            if (array_search($fieldName, $classMetadata->fieldNames) !== false) {
+                $wrapped->addField(BaseField::getInstance($classMetadata, $fieldName, $entity));
+            } else if ($classMetadata->hasAssociation($fieldName)) {
+                $wrapped->addField(ReferenceField::getInstance($classMetadata, $fieldName, $entity));
+            }
         }
         
         return $wrapped;
@@ -133,38 +175,78 @@ class FieldContainer
      */
     public function buildMetaFields(ClassMetadata $classMetadata)
     {
-        $field = MetaField::getInstance($classMetadata, 'id');
-        $this->fields[] = $field;
+        $this->fields[] = BaseField::getInstance($classMetadata, 'id');
         
         foreach ($classMetadata->fieldNames as $fieldName) {
             if (array_search($fieldName, self::INTERNAL_FIELDS) !== false) {
                 continue;
             }
-            
-            $field = MetaField::getInstance($classMetadata, $fieldName);
-            $this->fields[] = $field;
+
+            $this->fields[] = BaseField::getInstance($classMetadata, $fieldName);
         }
         
-        foreach (self::INTERNAL_FIELDS as $fieldName) {
-            if ($fieldName == 'id' || array_search($fieldName, $classMetadata->fieldNames) === false) {
+        foreach ($classMetadata->associationMappings as $associationMapping) {
+            if (array_search($associationMapping['fieldName'], self::INTERNAL_FIELDS) !== false) {
                 continue;
             }
             
-            $field = MetaField::getInstance($classMetadata, $fieldName);
-            $this->fields[] = $field;
+            if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
+                if (!$associationMapping['isOwningSide']) {
+                    continue;
+                }
+
+                $this->fields[] = ReferenceField::getInstance($classMetadata, $associationMapping['fieldName']);
+            } else if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
+                if (!$associationMapping['isOwningSide']) {
+                    continue;
+                }
+                
+                $collectionField = CollectionField::getInstance($classMetadata, $associationMapping['fieldName']);
+                
+                if ($this->fetchAllPosibleCollectionValues) {
+                    $collectionField->fetchAllValues();
+                }
+                
+                $this->fields[] = $collectionField;
+            }
+        }
+        
+        foreach (self::INTERNAL_FIELDS as $fieldName) {
+            if ($fieldName == 'id') {
+                continue;
+            }
+
+            if (array_search($fieldName, $classMetadata->fieldNames) !== false) {
+                $this->fields[] = BaseField::getInstance($classMetadata, $fieldName);
+            } else if ($classMetadata->hasAssociation($fieldName)) {
+                $this->fields[] = ReferenceField::getInstance($classMetadata, $fieldName);
+            }
+            
         }
     }
 
+    /**
+     * 
+     * @return \ItAces\View\WrappedEntity[]
+     */
     public function items()
     {
         return $this->items;
     }
     
+    /**
+     * 
+     * @return \ItAces\View\MetaField[]
+     */
     public function fields()
     {
         return $this->fields;
     }
     
+    /**
+     * 
+     * @return \ItAces\View\WrappedEntity
+     */
     public function first()
     {
         return $this->items[0];

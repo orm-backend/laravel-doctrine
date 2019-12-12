@@ -44,11 +44,18 @@ class DevelopmentException extends Exception implements HttpExceptionInterface, 
      */
     public function toResponse($request)
     {
+        if ($request->acceptsJson()) {
+            return response()->json([
+                'status' => $this->status,
+                'message' => $this->message
+            ], $this->status);
+        }
+        
         if (config('app.debug')) {
             throw new Exception($this->message);
         }
         
-        throw new HttpException(400);
+        throw new HttpException($this->status);
     }
 
 }

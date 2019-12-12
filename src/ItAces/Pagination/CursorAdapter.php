@@ -49,7 +49,7 @@ class CursorAdapter
      * @param bool $fetchJoinCollection
      * @return PaginatorAdapter
      */
-    public static function fromRequest(Query $query, $perPage = 15, $pageName = 'page', bool $fetchJoinCollection = false)
+    public static function fromRequest(Query $query, $perPage = 20, $pageName = 'page', bool $fetchJoinCollection = false)
     {
         return new static(
             $query,
@@ -68,7 +68,7 @@ class CursorAdapter
      * @param bool $fetchJoinCollection
      * @return PaginatorAdapter
      */
-    public static function fromParams(Query $query, $perPage = 15, $page = 1, bool $fetchJoinCollection = false)
+    public static function fromParams(Query $query, $perPage = 20, $page = 1, bool $fetchJoinCollection = false)
     {
         return new static(
             $query,

@@ -14,15 +14,15 @@ class JoinAwareRepository extends WithJoinsRepository
      * 
      * @var string[]
      */
-    protected $joinCollections;
+    protected $joinRelations;
     
     /**
      * 
-     * @param string[] $joinCollections
+     * @param string[] $joinRelations
      */
-    public function __construct(array $joinCollections = []) {
+    public function __construct(array $joinRelations = []) {
         parent::__construct();
-        $this->joinCollections = $joinCollections;
+        $this->joinRelations = $joinRelations;
     }
 
     /**
@@ -42,7 +42,7 @@ class JoinAwareRepository extends WithJoinsRepository
         }
         
         foreach ($classMetadata->associationMappings as $associationMapping) {
-            if (array_search($associationMapping['fieldName'], $this->joinCollections) === false) {
+            if (array_search($associationMapping['fieldName'], $this->joinRelations) === false) {
                 continue;
             }
             
