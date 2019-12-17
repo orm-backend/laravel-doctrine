@@ -102,7 +102,7 @@ class AdminController extends WebController
                 'order' => ['-'.$alias.'.id']
             ];
         }
-        
+
         $paginator = $this->paginate($this->withJoins->createQuery($className, $parameters, $alias))->appends($request->all());
         $container->buildMetaFields($classMetadata);
         $container->addCollection($paginator->items());

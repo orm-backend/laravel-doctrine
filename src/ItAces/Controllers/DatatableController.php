@@ -3,11 +3,10 @@
 namespace ItAces\Controllers;
 
 use Illuminate\Http\Request;
-use ItAces\Utility\Helper;
-use ItAces\Utility\Str;
-use ItAces\View\FieldContainer;
-use ItAces\Repositories\WithJoinsRepository;
 use ItAces\Json\DatatableSerializer;
+use ItAces\Repositories\WithJoinsRepository;
+use ItAces\Utility\Helper;
+use ItAces\View\FieldContainer;
 
 /**
  * 
@@ -40,6 +39,9 @@ class DatatableController extends WebController
         $className = Helper::classFromUlr($classUrlName);
         $classMetadata = $this->repository->em()->getClassMetadata($className);
         $container = new FieldContainer($this->repository->em());
+        $container->buildMetaFields($classMetadata);
+
+        return response()->json( $container->fields(), 200);
     }
     
     /**

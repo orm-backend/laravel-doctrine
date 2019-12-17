@@ -214,7 +214,7 @@ class ParameterBuilder
         $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
         
         if (! array_key_exists($targetField, $classMetadata->fieldMappings)) {
-            throw new DevelopmentException("Unknown field '{$targetField}' in '{$field}'.");
+            throw new DevelopmentException("Unknown field '{$targetField}' in '{$referenceOrAlias}'.");
         }
         
         return $classMetadata->fieldMappings[$targetField];

@@ -142,7 +142,7 @@ class QueryHelper
      */
     public function isAlias(string $referenceOrAlias)
     {
-        return array_key_exists($referenceOrAlias, $this->reverse);
+        return strpos($referenceOrAlias, '.') === false && array_key_exists($referenceOrAlias, $this->reverse);
     }
     
 }

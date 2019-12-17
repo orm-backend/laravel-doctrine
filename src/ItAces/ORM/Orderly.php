@@ -124,7 +124,7 @@ class Orderly
             }
             
             if (is_string($element)) {
-                $element = filter_var(trim($element), FILTER_SANITIZE_SPECIAL_CHARS, self::SANITIZE_STRING_FLAG);
+                $element = filter_var(trim($element), FILTER_SANITIZE_SPECIAL_CHARS, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_AMP);
                 
                 if ($integerType) {
                     $element = filter_var($element, FILTER_SANITIZE_NUMBER_INT);

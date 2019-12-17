@@ -349,10 +349,11 @@ class Query
         }
         
         $referenceOrAlias = $this->helper->fieldToReference($field);
-        
+
         if (!$this->helper->isAlias($referenceOrAlias)) {
             $alias = $this->helper->fieldToAlias($field);
             $this->addJoinIfNeed($referenceOrAlias, $alias);
+            $field = $alias;
         }
 
         if ($value === null) {
