@@ -88,6 +88,12 @@ abstract class MetaField
     
     /**
      * 
+     * @var string
+     */
+    public $classUrlName;
+    
+    /**
+     * 
      * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
      * @param string $fieldName
      * @param \ItAces\ORM\Entities\EntityBase $entity
@@ -119,6 +125,7 @@ abstract class MetaField
     {
         $this->name = $fieldName;
         $this->class = $classMetadata->name;
+        $this->classUrlName = Helper::classToUlr($this->class);
         $this->aliasname = lcfirst((new \ReflectionClass($this->class))->getShortName()) .'.'. $this->name;
         $this->fullname = Helper::classToUlr($this->class) .'.'. $this->name;
         $this->title = $this->name == 'id' ? 'ID' : __(Str::pluralCamelWords( ucfirst($this->name), 1));

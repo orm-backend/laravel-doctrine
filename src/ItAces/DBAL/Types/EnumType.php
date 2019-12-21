@@ -12,12 +12,13 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
  */
 abstract class EnumType extends Type
 {
-    protected $name;
-    protected $values = array();
+    abstract public function getTypeName();
+    
+    abstract public function getAllowedValues();
 
     public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform)
     {
-        $values = array_map(function($val) { return "'".$val."'"; }, $this->values);
+        $values = array_map(function($val) { return "'".$val."'"; }, $this->getAllowedValues());
 
         return "ENUM(".implode(", ", $values).")";
     }
@@ -29,15 +30,16 @@ abstract class EnumType extends Type
 
     public function convertToDatabaseValue($value, AbstractPlatform $platform)
     {
-        if (!in_array($value, $this->values)) {
-            throw new \InvalidArgumentException("Invalid '".$this->name."' value.");
+        if (!in_array($value, $this->getAllowedValues())) {
+            throw new \InvalidArgumentException("Invalid '".$this->getTypeName()."' value.");
         }
+        
         return $value;
     }
 
     public function getName()
     {
-        return $this->name;
+        return $this->getTypeName();
     }
 
     public function requiresSQLCommentHint(AbstractPlatform $platform)

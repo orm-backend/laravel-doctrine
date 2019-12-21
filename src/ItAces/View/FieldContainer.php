@@ -6,6 +6,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
+use ItAces\DBAL\Types\EnumType;
 
 /**
  * 
@@ -42,6 +43,8 @@ class FieldContainer
      */
     protected $fetchAllPosibleCollectionValues;
     
+    protected $enumTypes = [];
+    
     /**
      * 
      * @param \Doctrine\ORM\EntityManager $em
@@ -51,6 +54,14 @@ class FieldContainer
     {
         $this->em = $em;
         $this->fetchAllPosibleCollectionValues = $fetchAllPosibleCollectionValues;
+        
+        $customTypes = config('doctrine.custom_types');
+        
+        foreach ($customTypes as $name => $class) {
+            if ((new \ReflectionClass($class))->isSubclassOf(EnumType::class)) {
+                $this->enumTypes[$name] = $class;
+            }
+        }
     }
     
     /**
@@ -124,6 +135,15 @@ class FieldContainer
             if (array_search($fieldName, self::INTERNAL_FIELDS) !== false) {
                 continue;
             }
+
+            $fieldMapping = $classMetadata->getFieldMapping($fieldName);
+            
+            if (array_key_exists($fieldMapping['type'], $this->enumTypes)) {
+                $enumField = EnumField::getInstance($classMetadata, $fieldName, $entity);
+                $enumField->initOptions($this->enumTypes[$fieldMapping['type']]);
+                $wrapped->addField($enumField);
+                continue;
+            }
             
             $wrapped->addField(BaseField::getInstance($classMetadata, $fieldName, $entity));
         }
@@ -179,6 +199,15 @@ class FieldContainer
         
         foreach ($classMetadata->fieldNames as $fieldName) {
             if (array_search($fieldName, self::INTERNAL_FIELDS) !== false) {
+                continue;
+            }
+            
+            $fieldMapping = $classMetadata->getFieldMapping($fieldName);
+            
+            if (array_key_exists($fieldMapping['type'], $this->enumTypes)) {
+                $enumField = EnumField::getInstance($classMetadata, $fieldName);
+                $enumField->initOptions($this->enumTypes[$fieldMapping['type']]);
+                $this->fields[] = $enumField;
                 continue;
             }
 

@@ -114,13 +114,13 @@ class Query
     {
         $this->join = $this->buildAliasesFor($this->join);
         $this->select = $this->buildAliasesFor($this->select);
-
+        
         // SELECT
         $this->qb->select($this->alias);
         
         foreach ($this->select as $reference => $alias) {
             $this->qb->addSelect($alias);
-            $this->addJoinIfNeed($reference, $alias);
+            $this->buildJoins($reference, true);
         }
         
         // WHERE
@@ -166,12 +166,16 @@ class Query
     protected function addJoinIfNeed(string $referenceOrAlias, string $alias)
     {
         if ($this->helper->isAlias($referenceOrAlias)) {
-            return;
+            return false;
         }
         
         if ($referenceOrAlias != $this->alias && !array_key_exists($referenceOrAlias, $this->join)) {
             $this->join[$referenceOrAlias] = $alias;
+            $this->helper->addAlias($referenceOrAlias, $alias);
+            return true;
         }
+        
+        return false;
     }
     
     /**
@@ -219,10 +223,7 @@ class Query
         }
         
         $this->validator->validateFieldOrAlias($field);
-        $reference = $this->helper->fieldToReference($field);
-        $alias = $this->helper->referenceToAlias($reference);
-        $this->addJoinIfNeed($reference, $alias);
-        $alias = $this->helper->fieldToAlias($field);
+        $alias = $this->buildJoins($field);
         
         return call_user_func_array([$this->qb->expr(), $direction], [$alias]);
     }
@@ -349,11 +350,9 @@ class Query
         }
         
         $referenceOrAlias = $this->helper->fieldToReference($field);
-
+        
         if (!$this->helper->isAlias($referenceOrAlias)) {
-            $alias = $this->helper->fieldToAlias($field);
-            $this->addJoinIfNeed($referenceOrAlias, $alias);
-            $field = $alias;
+            $field = $this->buildJoins($field);
         }
 
         if ($value === null) {
@@ -369,6 +368,33 @@ class Query
         }
         
         return call_user_func_array([$this->qb->expr(), $operator], [$field, $parameterName]);
+    }
+    
+    /**
+     * 
+     * @param string $field
+     * @param bool $skipColumn
+     * @return string
+     */
+    protected function buildJoins(string $field, bool $skipColumn = null) : string
+    {
+        if ($skipColumn) {
+            $column = null;
+            $pieces = explode('.', $field);
+        } else {
+            $column = $this->helper->fieldToColumn($field);
+            $pieces = explode('.', $this->helper->fieldToReference($field));
+        }
+        
+        $alias = $pieces[0];
+        
+        for ($i = 0; $i < count($pieces) - 1; $i++) {
+            $reference = $alias . '.' . $pieces[$i + 1];
+            $alias = $alias . '_' . $pieces[$i + 1];
+            $this->addJoinIfNeed($reference, $alias);
+        }
+        
+        return $skipColumn ? $alias : $alias.'.'.$column;
     }
     
     /**

@@ -56,12 +56,6 @@ class ParameterBuilder
     protected $alias;
     
     /**
-     * 
-     * @var boolean
-     */
-    protected $useStrongTyping = true;
-    
-    /**
      *
      * @var boolean
      */
@@ -74,22 +68,19 @@ class ParameterBuilder
      * @param string $alias
      * @param string $class
      * @param bool $useNamedParameters
-     * @param bool $useStrongTyping
      */
     public function __construct(
         QueryBuilder $qb,
         QueryHelper $helper,
         string $alias,
         string $class,
-        bool $useNamedParameters = null,
-        bool $useStrongTyping = null)
+        bool $useNamedParameters = null)
     {
         $this->qb = $qb;
         $this->helper = $helper;
         $this->alias = $alias;
         $this->class = $class;
         $this->useNamedParameters = $useNamedParameters !== false;
-        $this->useStrongTyping = $useStrongTyping !== false;
         $this->orderly = new Orderly();
     }
     
@@ -184,35 +175,38 @@ class ParameterBuilder
             throw new DevelopmentException("The passed field '{$referenceOrAlias}' name must contain a dot.");
         }
         
-        if ($pieces[0] != $this->alias) {
+        if ($this->helper->isAlias($pieces[0])) {
             $reference = $this->helper->getReferenceByAlias($pieces[0]);
             
             if ($reference) {
-                $pieces[0] = $reference;
+                $column = $pieces[1];
+                $pieces = explode('.', $reference);
+                $pieces[] = $column;
             } else {
                 throw new DevelopmentException("Unknown entity reference '{$pieces[0]}' in '{$referenceOrAlias}'.");
             }
         }
         
         $targetField = null;
+        $targetLength = count($pieces) - 2;
         $index = 0;
         
-        while ($index < count($pieces) - 1) {
+        while ($index <= $targetLength) {
             $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
             $targetField = $pieces[$index + 1];
-            
+ 
             if (array_key_exists($targetField, $classMetadata->associationMappings)) {
                 $fieldMetadata = $classMetadata->associationMappings[$targetField];
                 $targetEntity = $fieldMetadata['targetEntity'];
             } else if (! array_key_exists($targetField, $classMetadata->fieldMappings)) {
-                throw new DevelopmentException("Unknown reference '{$targetField}' in '{$field}'.");
+                throw new DevelopmentException("Unknown reference '{$targetField}' in '{$referenceOrAlias}'.");
             }
             
             $index ++;
         }
-        
+
         $classMetadata = $this->qb->getEntityManager()->getClassMetadata($targetEntity);
-        
+
         if (! array_key_exists($targetField, $classMetadata->fieldMappings)) {
             throw new DevelopmentException("Unknown field '{$targetField}' in '{$referenceOrAlias}'.");
         }

@@ -37,12 +37,18 @@ class QueryHelper
     /**
      *
      * @param string $field
+     * @param bool $withColumn
      * @return string
      */
-    public function fieldToAlias(string $field) : string
+    public function fieldToAlias(string $field, bool $withColumn = null) : string
     {
         $reference = $this->fieldToReference($field);
         $alias = $this->referenceToAlias($reference);
+        
+        if (!$withColumn) {
+            return $alias;
+        }
+        
         $column = $this->fieldToColumn($field);
         
         return $alias.'.'.$column;
@@ -102,11 +108,11 @@ class QueryHelper
      */
     public function getReferenceByAlias(string $alias)
     {
-        if (array_key_exists($alias, $this->reverse)) {
-            return $this->reverse[$alias];
+        if (!array_key_exists($alias, $this->reverse)) {
+            return null;
         }
-        
-        return null;
+
+        return str_replace('_', '.', $alias);
     }
     
     /**

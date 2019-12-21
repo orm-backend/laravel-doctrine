@@ -102,7 +102,18 @@ class AdminController extends WebController
                 'order' => ['-'.$alias.'.id']
             ];
         }
-
+        
+//         $dql = 
+// 'SELECT
+// 	city
+// FROM App\Model\City city
+// LEFT JOIN city.createdBy city_createdBy
+// LEFT JOIN city_createdBy.roles city_createdBy_roles
+// WHERE city_createdBy_roles.code like :code
+// ORDER BY city.id DESC';
+//         $query = $this->withJoins->em()->createQuery($dql)->setParameter('code', 'admin');
+//         $paginator = $this->paginate($query)->appends($request->all());
+        //dd($this->withJoins->createQuery($className, $parameters, $alias)->getSQL());
         $paginator = $this->paginate($this->withJoins->createQuery($className, $parameters, $alias))->appends($request->all());
         $container->buildMetaFields($classMetadata);
         $container->addCollection($paginator->items());
@@ -182,7 +193,7 @@ class AdminController extends WebController
         ];
 
         $container->addEntity($entity);
-        
+
         return view('admin.entity.edit', [
             'menu' => $this->menu,
             'container' => $container,
