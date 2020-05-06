@@ -22,10 +22,6 @@ abstract class WebController extends Controller
     public function __construct()
     {
         $this->repository = new Repository;
-        
-        if (auth()->id() && auth()->user()->isAdmin()) {
-            $this->repository->em()->getFilters()->disable('softdelete');
-        }
     }
     
     /**

@@ -72,7 +72,7 @@ class Repository
     {
         $query = QueryFactory::fromRequest($this->em, $class, $parameters, $alias)->createQueryBuilder()->getQuery();
         $this->enableCaches($query);
-        
+
         return $query;
     }
     
@@ -133,7 +133,7 @@ class Repository
         
         foreach ($classMetadata->associationMappings as $associationMapping) {
             $fieldName = $associationMapping['fieldName'];
-
+            
             if (array_key_exists($fieldName, $data)) {
                 $targetEntity = $associationMapping['targetEntity'];
                 $getter = 'get' . ucfirst($fieldName);
@@ -164,17 +164,22 @@ class Repository
                         $collection->add($association);
                     }
                 } else if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
+
                     if ($data[$fieldName] !== null) {
-                        $associationId = (int) $data[$fieldName];
-                        
-                        if ($associationId < 1) {
-                            throw new DevelopmentException("The value of '{$class}::{$fieldName}' must be an unsigned integer.");
-                        }
-                        
-                        $association = $this->em->find($targetEntity, $associationId);
-                        
-                        if (!$association) {
-                            throw new DevelopmentException("The value of '{$class}::{$fieldName}' is incorrect. The entity '{$targetEntity}' with id '{$associationId}' does not exists.");
+                        if ($data[$fieldName] instanceof EntityBase) {
+                            $association = $data[$fieldName];
+                        } else {
+                            $associationId = (int) $data[$fieldName];
+                            
+                            if ($associationId < 1) {
+                                throw new DevelopmentException("The value of '{$class}::{$fieldName}' must be an unsigned integer.");
+                            }
+                            
+                            $association = $this->em->find($targetEntity, $associationId);
+                            
+                            if (!$association) {
+                                throw new DevelopmentException("The value of '{$class}::{$fieldName}' is incorrect. The entity '{$targetEntity}' with id '{$associationId}' does not exists.");
+                            }
                         }
                         
                         $entity->$setter( $association );

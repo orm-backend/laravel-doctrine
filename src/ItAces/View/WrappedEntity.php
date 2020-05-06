@@ -2,6 +2,10 @@
 
 namespace ItAces\View;
 
+use ItAces\ORM\Entities\EntityBase;
+use ItAces\Types\FileType;
+use ItAces\Types\ImageType;
+
 
 /**
  * 
@@ -24,11 +28,25 @@ class WrappedEntity
     
     /**
      * 
+     * @var string
+     */
+    protected $type;
+    
+    /**
+     * 
      * @param int $id
      */
-    public function __construct(int $id)
+    public function __construct(EntityBase $entity)
     {
-        $this->id = $id;
+        $this->id = $entity->getId();
+        
+        if ($entity instanceof ImageType) {
+            $this->type = 'image';
+        } else if ($entity instanceof FileType) {
+            $this->type = 'file';
+        } else {
+            $this->type = 'common';
+        }
     }
     
     /**
@@ -47,6 +65,15 @@ class WrappedEntity
     public function id()
     {
         return $this->id;
+    }
+    
+    /**
+     *
+     * @return string
+     */
+    public function type()
+    {
+        return $this->type;
     }
     
     /**

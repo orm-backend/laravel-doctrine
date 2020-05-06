@@ -21,12 +21,6 @@ class JsonCRUDController extends WebController
     protected $class;
     
     /**
-     * 
-     * @var string[]
-     */
-    protected $additional = [];
-    
-    /**
      *
      * @var \ItAces\Repositories\WithJoinsRepository
      */
@@ -39,7 +33,6 @@ class JsonCRUDController extends WebController
     }
     
     /**
-    * Display a listing of the resource.
     *
     * @param  \Illuminate\Http\Request  $request
     * @return  \Illuminate\Http\JsonResponse
@@ -48,11 +41,10 @@ class JsonCRUDController extends WebController
     {
         $paginator = $this->cursor($this->withJoins->createQuery($this->class))->appends($request->all());
         
-        return response()->json( new JsonCollectionSerializer($this->withJoins->em(), $paginator, $this->additional), 200);
+        return response()->json( new JsonCollectionSerializer($this->withJoins->em(), $paginator), 200);
     }
     
     /**
-     * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return  \Illuminate\Http\JsonResponse
@@ -64,11 +56,10 @@ class JsonCRUDController extends WebController
         $instance = $this->withJoins->createOrUpdate($this->class, $data);
         $this->withJoins->em()->flush();
         
-        return response()->json( new JsonSerializer($this->withJoins->em(), $instance, $this->additional), 201);
+        return response()->json( new JsonSerializer($this->withJoins->em(), $instance), 201);
     }
     
     /**
-     * Display the specified resource.
      *
      * @param  integer  $id
      * @return  \Illuminate\Http\JsonResponse
@@ -77,11 +68,10 @@ class JsonCRUDController extends WebController
     {
         $instance = $this->withJoins->findOrFail($this->class, $id);
         
-        return response()->json( new JsonSerializer($this->withJoins->em(), $instance, $this->additional), 200);
+        return response()->json( new JsonSerializer($this->withJoins->em(), $instance), 200);
     }
     
     /**
-     * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  integer  $id
@@ -94,11 +84,10 @@ class JsonCRUDController extends WebController
         $instance = $this->withJoins->createOrUpdate($this->class, $data, $id);
         $this->withJoins->em()->flush();
         
-        return response()->json( new JsonSerializer($this->withJoins->em(), $instance, $this->additional), 200);
+        return response()->json( new JsonSerializer($this->withJoins->em(), $instance), 200);
     }
     
     /**
-     * Remove the specified resource from storage.
      *
      * @param  integer  $id
      * @return \Illuminate\Http\JsonResponse
@@ -109,6 +98,18 @@ class JsonCRUDController extends WebController
         $this->repository->em()->flush();
         
         return response()->json(null, 204);
+    }
+    
+    /**
+     * 
+     * @param string $class
+     * @return \ItAces\Controllers\JsonCRUDController
+     */
+    public function setClass(string $class)
+    {
+        $this->class = $class;
+        
+        return $this;
     }
     
 }

@@ -3,9 +3,12 @@
 namespace ItAces\View;
 
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Illuminate\Support\Facades\Storage;
 use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
 use ItAces\Utility\Str;
+use ItAces\Types\FileType;
+use ItAces\Types\ImageType;
 
 class CollectionField extends MetaField
 {
@@ -27,11 +30,11 @@ class CollectionField extends MetaField
      */
     public $refClassAlias;
     
-    /**
-     * 
-     * @var \stdClass[]
-     */
-    public $allValues = [];
+//     /**
+//      * 
+//      * @var \stdClass[]
+//      */
+//     public $allValues = [];
     
     /**
      *
@@ -71,19 +74,35 @@ class CollectionField extends MetaField
              * @var \ItAces\ORM\Entities\EntityBase[] $collection
              */
             $collection = $classMetadata->getFieldValue($entity, $fieldName);
-            
+
             if ($collection) {
-                foreach ($collection as $reference) {
+                foreach ($collection as $element) {
                     $wrapped = new \stdClass;
+                    $wrapped->id = $element->getId();
                     $wrapped->selected = true;
-                    $wrapped->id = $reference->getId();
+
+//                     if ($element instanceof ImageType) {
+//                         $wrapped->type = 'image';
+//                     } else if ($element instanceof FileType) {
+//                         $wrapped->type = 'file';
+//                     } else {
+//                         $wrapped->type = 'common';
+//                     }
                     
                     if ($refClassMetadata->hasField('name')) {
-                        $wrapped->name = Str::limit( $refClassMetadata->getFieldValue($reference, 'name'), 50 );
+                        $wrapped->name = Str::limit( $refClassMetadata->getFieldValue($element, 'name'), 50 );
                     } else if ($refClassMetadata->hasField('code')) {
-                        $wrapped->name = Str::limit( $refClassMetadata->getFieldValue($reference, 'code'), 50 );
+                        $wrapped->name = Str::limit( $refClassMetadata->getFieldValue($element, 'code'), 50 );
                     } else {
-                        $wrapped->name = $wrapped->value;
+                        $wrapped->name = $wrapped->id;
+                    }
+
+                    if ($element instanceof FileType) {
+                        $wrapped->path = $element->getPath();
+                    }
+                    
+                    if ($element instanceof ImageType) {
+                        $wrapped->url = Storage::url($wrapped->path);
                     }
                     
                     $instance->value[$wrapped->id] = $wrapped;
@@ -111,17 +130,25 @@ class CollectionField extends MetaField
         if ($collection) {
             $tmp = [];
             
-            foreach ($collection as $reference) {
+            foreach ($collection as $element) {
                 $wrapped = new \stdClass;
-                $wrapped->id = $reference->getId();
+                $wrapped->id = $element->getId();
                 $wrapped->selected = array_key_exists($wrapped->id, $this->value);
                 
                 if ($refClassMetadata->hasField('name')) {
-                    $wrapped->name = Str::limit( $refClassMetadata->getFieldValue($reference, 'name'), 50 );
+                    $wrapped->name = Str::limit( $refClassMetadata->getFieldValue($element, 'name'), 50 );
                 } else if ($refClassMetadata->hasField('code')) {
-                    $wrapped->name = Str::limit( $refClassMetadata->getFieldValue($reference, 'code'), 50 );
+                    $wrapped->name = Str::limit( $refClassMetadata->getFieldValue($element, 'code'), 50 );
                 } else {
-                    $wrapped->name = $wrapped->value;
+                    $wrapped->name = $wrapped->id;
+                }
+                
+                if ($element instanceof FileType) {
+                    $wrapped->path = $element->getPath();
+                }
+                
+                if ($element instanceof ImageType) {
+                    $wrapped->url = Storage::url($wrapped->path);
                 }
                 
                 $tmp[$wrapped->id] = $wrapped;
@@ -129,8 +156,6 @@ class CollectionField extends MetaField
             
             $this->value = $tmp;
         }
-        
-        
     }
     
     protected function getHtmlType()

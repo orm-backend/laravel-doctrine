@@ -4,9 +4,16 @@ namespace ItAces\View;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use ItAces\DBAL\Types\EnumType;
 use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
-use ItAces\DBAL\Types\EnumType;
+use ItAces\Types\FileType;
+use ItAces\Types\ImageType;
+use ItAces\Uploader;
+use ItAces\ORM\DevelopmentException;
 
 /**
  * 
@@ -29,7 +36,7 @@ class FieldContainer
      *
      * @var \ItAces\View\WrappedEntity[]
      */
-    protected $items = [];
+    protected $entities = [];
     
     /**
      * 
@@ -43,6 +50,10 @@ class FieldContainer
      */
     protected $fetchAllPosibleCollectionValues;
     
+    /**
+     * 
+     * @var array
+     */
     protected $enumTypes = [];
     
     /**
@@ -54,7 +65,6 @@ class FieldContainer
     {
         $this->em = $em;
         $this->fetchAllPosibleCollectionValues = $fetchAllPosibleCollectionValues;
-        
         $customTypes = config('doctrine.custom_types');
         
         foreach ($customTypes as $name => $class) {
@@ -64,38 +74,156 @@ class FieldContainer
         }
     }
     
+    public static function exceptionToMessages(ValidationException $e, string $classUrlName) : array
+    {
+        $messages = $e->validator->getMessageBag()->getMessages();
+        
+        foreach ($messages as $key => $value) {
+            $newKey = $classUrlName.'.'.$key;
+            $messages[$newKey] = $value;
+            unset($messages[$key]);
+        }
+        
+        return $messages;
+    }
+    
     /**
      *
      * @param array $data
+     * @throws \Illuminate\Validation\ValidationException
      * @return array
      */
     public static function readRequest(array $data) : array
     {
         $map = [];
-
+        
         foreach ($data as $key => $value) {
-            $lastUnderscore = strripos($key, '_');
-            
-            if (!$lastUnderscore) {
+            if (strrpos($key, '_file')) {
                 continue;
             }
             
-            $classUrlName = substr($key, 0, strripos($key, '_'));
-            $fieldName = substr($key, strripos($key, '_') + 1);
-            $className = Helper::classFromUlr($classUrlName);
+            [$className, $fieldName] = self::extractFieldName($key);
             
-            if (!$classUrlName || !$fieldName) {
+            if (!$className || !$fieldName) {
                 continue;
             }
 
             if (!array_key_exists($className, $map)) {
                 $map[$className] = [];
             }
-            
+
             $map[$className][$fieldName] = $value;
         }
 
+        /**
+         *
+         * @var \Doctrine\ORM\EntityManager $em
+         */
+        $em = app('em');
+        /**
+         * 
+         * @var \Illuminate\Http\Request $request
+         */
+        $request = request();
+        $files = $request->allFiles();
+        
+        foreach ($files as $key => $file) {
+            $key = substr($key, 0, strrpos($key, '_file'));
+            
+            if (!$key) {
+                // Input name does not ends with _file, ignoring
+                continue;
+            }
+            /**
+             *
+             * @var \Illuminate\Http\UploadedFile $uploadedFile
+             */
+            $uploadedFile = $file;
+            [$className, $fieldName] = self::extractFieldName($key);
+            
+            if (!$className || !$fieldName) {
+                throw new DevelopmentException("Incorrect input name `{$key}`");
+            }
+            
+            $classMetadata = $em->getClassMetadata($className);
+            
+            if ($classMetadata->hasAssociation($fieldName)) {
+                $association = $classMetadata->getAssociationMapping($fieldName);
+                
+                if (in_array(FileType::class, class_implements($association['targetEntity']))) {
+                    $isImage = in_array(ImageType::class, class_implements($association['targetEntity']));
+                    $targetEntity = $association['targetEntity'];
+                    Validator::make([$fieldName => $uploadedFile], $targetEntity::getRequestValidationRules())->validate();
+                    
+                    if ($association['type'] & ClassMetadataInfo::TO_ONE) {
+                        $map[$className][$fieldName] = self::storeFile($uploadedFile, $targetEntity, $key, $isImage);
+                    } else if ($association['type'] & ClassMetadataInfo::TO_MANY) {
+                        if (!is_array($map[$className][$fieldName])) {
+                            $map[$className][$fieldName] = [];
+                        }
+                        
+                        if (is_array($uploadedFile)) {
+                            foreach ($uploadedFile as $file) {
+                                $map[$className][$fieldName][] = self::storeFile($file, $targetEntity, $key, $isImage);
+                            }
+                        } else {
+                            $map[$className][$fieldName][] = self::storeFile($uploadedFile, $targetEntity, $key, $isImage);
+                        }
+                    }
+                }
+            }
+        }
+
         return $map;
+    }
+    
+    /**
+     * 
+     * @param UploadedFile $uploadedFile
+     * @param string $targetEntity
+     * @param string $key
+     * @param bool $isImage
+     * @throws \Illuminate\Validation\ValidationException
+     * @return \ItAces\ORM\Entities\EntityBase
+     */
+    protected static function storeFile(UploadedFile $uploadedFile, string $targetEntity, string $key, bool $isImage) : EntityBase
+    {
+        if ($isImage) {
+            $path = Uploader::storeImage($uploadedFile, $key);
+        } else {
+            $path = Uploader::storeDocument($uploadedFile, $key);
+        }
+
+        if (!$path) {
+            throw ValidationException::withMessages([
+                $key => [__('Failed to store file.')],
+            ]);
+        }
+
+        /**
+         *
+         * @var \ItAces\View\Types\FileType $targetEntity
+         */
+        $fileEntity = new $targetEntity;
+        $fileEntity->setName($uploadedFile->getClientOriginalName());
+        $fileEntity->setPath($path);
+        
+        return $fileEntity;
+    }
+    
+    static protected function extractFieldName(string $key) : array
+    {
+        $className = null;
+        $fieldName = null;
+        $lastUnderscore = strripos($key, '_');
+        
+        if ($lastUnderscore) {
+            $classUrlName = substr($key, 0, strripos($key, '_'));
+            $fieldName = substr($key, strripos($key, '_') + 1);
+            $className = Helper::classFromUlr($classUrlName);
+        }
+        
+        return [$className, $fieldName];
     }
     
     /**
@@ -106,7 +234,7 @@ class FieldContainer
     {
         $className = get_class($entity);
         $classMetadata = $this->em->getClassMetadata($className);
-        $this->items[] = $this->wrapEntity($classMetadata, $entity);
+        $this->entities[] = $this->wrapEntity($classMetadata, $entity);
     }
     
     /**
@@ -128,62 +256,16 @@ class FieldContainer
      */
     protected function wrapEntity(ClassMetadata $classMetadata, EntityBase $entity) : WrappedEntity
     {
-        $wrapped = new WrappedEntity($entity->getId());
-        $wrapped->addField(BaseField::getInstance($classMetadata, 'id', $entity));
+        $fields = [BaseField::getInstance($classMetadata, 'id', $entity)];
+        $fields = array_merge($fields, $this->buildMetadataOfSimpleFields($classMetadata, $entity));
+        $fields = array_merge($fields, $this->buildMetadataOfFileFields($classMetadata, $entity));
+        $fields = array_merge($fields, $this->buildMetadataOfAssociationFields($classMetadata, $entity));
+        $fields = array_merge($fields, $this->buildMetadataOfInternalFields($classMetadata, $entity));
         
-        foreach ($classMetadata->fieldNames as $fieldName) {
-            if (array_search($fieldName, self::INTERNAL_FIELDS) !== false) {
-                continue;
-            }
-
-            $fieldMapping = $classMetadata->getFieldMapping($fieldName);
-            
-            if (array_key_exists($fieldMapping['type'], $this->enumTypes)) {
-                $enumField = EnumField::getInstance($classMetadata, $fieldName, $entity);
-                $enumField->initOptions($this->enumTypes[$fieldMapping['type']]);
-                $wrapped->addField($enumField);
-                continue;
-            }
-            
-            $wrapped->addField(BaseField::getInstance($classMetadata, $fieldName, $entity));
-        }
+        $wrapped = new WrappedEntity($entity);
         
-        foreach ($classMetadata->associationMappings as $associationMapping) {
-            if (array_search($associationMapping['fieldName'], self::INTERNAL_FIELDS) !== false) {
-                continue;
-            }
-            
-            if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
-                if (!$associationMapping['isOwningSide']) {
-                    continue;
-                }
-                
-                $wrapped->addField(ReferenceField::getInstance($classMetadata, $associationMapping['fieldName'], $entity));
-            } else if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
-                if (!$associationMapping['isOwningSide']) {
-                    continue;
-                }
-                
-                $collectionField = CollectionField::getInstance($classMetadata, $associationMapping['fieldName'], $entity);
-                
-                if ($this->fetchAllPosibleCollectionValues) {
-                    $collectionField->fetchAllValues();
-                }
-                
-                $wrapped->addField($collectionField);
-            }
-        }
-        
-        foreach (self::INTERNAL_FIELDS as $fieldName) {
-            if ($fieldName == 'id') {
-                continue;
-            }
-            
-            if (array_search($fieldName, $classMetadata->fieldNames) !== false) {
-                $wrapped->addField(BaseField::getInstance($classMetadata, $fieldName, $entity));
-            } else if ($classMetadata->hasAssociation($fieldName)) {
-                $wrapped->addField(ReferenceField::getInstance($classMetadata, $fieldName, $entity));
-            }
+        foreach ($fields as $field) {
+            $wrapped->addField($field);
         }
         
         return $wrapped;
@@ -196,6 +278,67 @@ class FieldContainer
     public function buildMetaFields(ClassMetadata $classMetadata)
     {
         $this->fields[] = BaseField::getInstance($classMetadata, 'id');
+        $this->fields = array_merge($this->fields, $this->buildMetadataOfSimpleFields($classMetadata));
+        $this->fields = array_merge($this->fields, $this->buildMetadataOfFileFields($classMetadata));
+        $this->fields = array_merge($this->fields, $this->buildMetadataOfAssociationFields($classMetadata));
+        $this->fields = array_merge($this->fields, $this->buildMetadataOfInternalFields($classMetadata));
+    }
+
+    /**
+     *
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
+     * @param \ItAces\ORM\Entities\EntityBase $instance
+     * @return \ItAces\View\MetaField[]
+     */
+    protected function buildMetadataOfFileFields(ClassMetadata $classMetadata, EntityBase $entity = null)
+    {
+        $fields = [];
+        
+        foreach ($classMetadata->associationMappings as $association) {
+            if (!in_array(FileType::class, class_implements($association['targetEntity'])) ||
+                !$association['isOwningSide']) {
+                continue;
+            }
+
+            if (in_array(ImageType::class, class_implements($association['targetEntity']))) {
+                if ($association['type'] & ClassMetadataInfo::TO_ONE) {
+                    $fields[] = ImageField::getInstance($classMetadata, $association['fieldName'], $entity);
+                } else if ($association['type'] & ClassMetadataInfo::TO_MANY) {
+                    $collectionField = ImageCollectionField::getInstance($classMetadata, $association['fieldName'], $entity);
+                    
+                    if ($this->fetchAllPosibleCollectionValues) {
+                        $collectionField->fetchAllValues();
+                    }
+                    
+                    $fields[] = $collectionField;
+                }
+            } else {
+                if ($association['type'] & ClassMetadataInfo::TO_ONE) {
+                    $fields[] = FileField::getInstance($classMetadata, $association['fieldName'], $entity);
+                } else if ($association['type'] & ClassMetadataInfo::TO_MANY) {
+                    $collectionField = FileCollectionField::getInstance($classMetadata, $association['fieldName'], $entity);
+                    
+                    if ($this->fetchAllPosibleCollectionValues) {
+                        $collectionField->fetchAllValues();
+                    }
+                    
+                    $fields[] = $collectionField;
+                }
+            }
+        }
+        
+        return $fields;
+    }
+    
+    /**
+     *
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
+     * @param \ItAces\ORM\Entities\EntityBase $instance
+     * @return \ItAces\View\MetaField[]
+     */
+    protected function buildMetadataOfSimpleFields(ClassMetadata $classMetadata, EntityBase $entity = null)
+    {
+        $fields = [];
         
         foreach ($classMetadata->fieldNames as $fieldName) {
             if (array_search($fieldName, self::INTERNAL_FIELDS) !== false) {
@@ -205,62 +348,90 @@ class FieldContainer
             $fieldMapping = $classMetadata->getFieldMapping($fieldName);
             
             if (array_key_exists($fieldMapping['type'], $this->enumTypes)) {
-                $enumField = EnumField::getInstance($classMetadata, $fieldName);
+                $enumField = EnumField::getInstance($classMetadata, $fieldName, $entity);
                 $enumField->initOptions($this->enumTypes[$fieldMapping['type']]);
-                $this->fields[] = $enumField;
-                continue;
-            }
-
-            $this->fields[] = BaseField::getInstance($classMetadata, $fieldName);
-        }
-        
-        foreach ($classMetadata->associationMappings as $associationMapping) {
-            if (array_search($associationMapping['fieldName'], self::INTERNAL_FIELDS) !== false) {
+                $fields[] = $enumField;
                 continue;
             }
             
-            if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
-                if (!$associationMapping['isOwningSide']) {
-                    continue;
-                }
-
-                $this->fields[] = ReferenceField::getInstance($classMetadata, $associationMapping['fieldName']);
-            } else if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
-                if (!$associationMapping['isOwningSide']) {
+            $fields[] = BaseField::getInstance($classMetadata, $fieldName, $entity);
+        }
+        
+        return $fields;
+    }
+    
+    /**
+     *
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
+     * @param \ItAces\ORM\Entities\EntityBase $instance
+     * @return \ItAces\View\MetaField[]
+     */
+    protected function buildMetadataOfAssociationFields(ClassMetadata $classMetadata, EntityBase $entity = null)
+    {
+        $fields = [];
+        
+        foreach ($classMetadata->associationMappings as $association) {
+            if (array_search($association['fieldName'], self::INTERNAL_FIELDS) !== false ||
+                in_array(FileType::class, class_implements($association['targetEntity']))) {
+                continue;
+            }
+            
+            if ($association['type'] & ClassMetadataInfo::TO_ONE) {
+                if (!$association['isOwningSide']) {
                     continue;
                 }
                 
-                $collectionField = CollectionField::getInstance($classMetadata, $associationMapping['fieldName']);
+                $fields[] = ReferenceField::getInstance($classMetadata, $association['fieldName'], $entity);
+            } else if ($association['type'] & ClassMetadataInfo::TO_MANY) {
+                if (!$association['isOwningSide']) {
+                    continue;
+                }
+                
+                $collectionField = CollectionField::getInstance($classMetadata, $association['fieldName'], $entity);
                 
                 if ($this->fetchAllPosibleCollectionValues) {
                     $collectionField->fetchAllValues();
                 }
                 
-                $this->fields[] = $collectionField;
+                $fields[] = $collectionField;
             }
         }
+        
+        return $fields;
+    }
+    
+    /**
+     *
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
+     * @param \ItAces\ORM\Entities\EntityBase $instance
+     * @return \ItAces\View\MetaField[]
+     */
+    protected function buildMetadataOfInternalFields(ClassMetadata $classMetadata, EntityBase $entity = null)
+    {
+        $fields = [];
         
         foreach (self::INTERNAL_FIELDS as $fieldName) {
             if ($fieldName == 'id') {
                 continue;
             }
-
-            if (array_search($fieldName, $classMetadata->fieldNames) !== false) {
-                $this->fields[] = BaseField::getInstance($classMetadata, $fieldName);
-            } else if ($classMetadata->hasAssociation($fieldName)) {
-                $this->fields[] = ReferenceField::getInstance($classMetadata, $fieldName);
-            }
             
+            if (array_search($fieldName, $classMetadata->fieldNames) !== false) {
+                $fields[] = BaseField::getInstance($classMetadata, $fieldName, $entity);
+            } else if ($classMetadata->hasAssociation($fieldName)) {
+                $fields[] = ReferenceField::getInstance($classMetadata, $fieldName, $entity);
+            }
         }
+        
+        return $fields;
     }
-
+    
     /**
      * 
      * @return \ItAces\View\WrappedEntity[]
      */
-    public function items()
+    public function entities()
     {
-        return $this->items;
+        return $this->entities;
     }
     
     /**
@@ -274,11 +445,11 @@ class FieldContainer
     
     /**
      * 
-     * @return \ItAces\View\WrappedEntity
+     * @return \ItAces\View\WrappedEntity|null
      */
     public function first()
     {
-        return $this->items[0];
+        return isset($this->entities[0]) ? $this->entities[0] : null;
     }
 
 }

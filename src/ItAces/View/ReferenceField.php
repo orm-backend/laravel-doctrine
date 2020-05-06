@@ -43,7 +43,6 @@ class ReferenceField extends MetaField
     public static function getInstance(ClassMetadata $classMetadata, string $fieldName, EntityBase $entity = null)
     {
         $instance = parent::getInstance($classMetadata, $fieldName);
-        
         $associationMapping = $classMetadata->getAssociationMapping($fieldName);
         $instance->refClassUrlName = Helper::classToUlr($associationMapping['targetEntity']);
         $instance->refClassAlias = lcfirst((new \ReflectionClass($associationMapping['targetEntity']))->getShortName());

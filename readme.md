@@ -141,4 +141,9 @@ public function index(Request  $request)
 6. создаем контроллеры из нескольких строк кода и данный функционал готов для публичной части
 7. пишем что-то кастомное
 
+## VI. Установка
+```BASH
+php artisan vendor:publish --provider="ItAces\PackageServiceProvider" --tag="itaces"
+```
+
 
