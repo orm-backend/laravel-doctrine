@@ -8,15 +8,10 @@ return [
         'cache' => 'img'
     ],
     
-//     'adapters' => [
-//         'web' => [
-//             App\Model\User::class => ItAces\Admin\Adapters\UserAdapter::class,
-//             App\Model\Image::class => ItAces\Admin\Adapters\ImageAdapter::class
-//         ],
-        
-//         'api' => [
-//             App\Model\Image::class => ItAces\Adapters\ImageAdapter::class
-//         ]
-//     ],
+    'adapters' => [
+        'api' => [
+            App\Model\Image::class => ItAces\Adapters\ImageAdapter::class,
+        ],
+    ],
     
 ];

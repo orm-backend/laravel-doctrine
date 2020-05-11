@@ -7,7 +7,6 @@ use Doctrine\ORM\Configuration;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 use ItAces\ORM\NamingStrategy;
@@ -50,11 +49,25 @@ class PackageServiceProvider extends ServiceProvider
         Validator::extend('persistentcollection', PersistentCollection::class . '@validate');
         Validator::extend('persistentfile', PersistentFile::class . '@validate');
         
-        include __DIR__.'/../routes.php';
+        $this->loadRoutesFrom(__DIR__.'/../routes.php');
         
         $this->publishes([
             __DIR__.'/../../config/itaces.php' => config_path('itaces.php'),
-        ], 'itaces');
+        ], 'config');
+    }
+    
+    /**
+     * Register any application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        $this->mergeConfigFrom(
+            __DIR__.'/../../config/itaces.php', 'itaces'
+        );
+        
+        require_once base_path('vendor') . '/it-aces/laravel-doctrine/src/functions.php';
     }
 
 }

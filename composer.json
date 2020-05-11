@@ -12,9 +12,9 @@
     ],
     "require": {
     	"php": "^7.1",
-    	"laravel/framework": "^6.0",
+    	"laravel/passport": "^8.0",
     	"laravel-doctrine/orm": "^1.5",
-    	"beberlei/DoctrineExtensions": "^1.0",
+    	"laravel-doctrine/extensions": "^1.1",
     	"nesbot/carbon": "^2.0"
     },
     "require-dev": {
@@ -26,5 +26,12 @@
         "files": [
             "src/functions.php"
         ]
-    }
+    },
+    "extra": {
+	    "laravel": {
+	        "providers": [
+	            "ItAces\\PackageServiceProvider"
+	        ]
+	    }
+	}
 }

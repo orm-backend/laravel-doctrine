@@ -13,7 +13,14 @@ use ItAces\Image;
  */
 class ImageController
 {
-    
+    /**
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @param string $mode
+     * @param int $width
+     * @param int $height
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     */
     public function resize(Request $request, string $mode, int $width, int $height) {
         $src = $request->get('src');
         
