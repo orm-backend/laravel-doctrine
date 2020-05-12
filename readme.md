@@ -143,7 +143,7 @@ public function index(Request  $request)
 
 ## VI. Установка
 ```BASH
-php artisan vendor:publish --provider="ItAces\PackageServiceProvider" --tag="itaces"
+php artisan vendor:publish --provider="ItAces\PackageServiceProvider"
 ```
 
 

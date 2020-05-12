@@ -2,9 +2,11 @@
 
 namespace ItAces\View;
 
+use Illuminate\Support\Facades\Gate;
 use ItAces\ORM\Entities\EntityBase;
 use ItAces\Types\FileType;
 use ItAces\Types\ImageType;
+use ItAces\Utility\Helper;
 
 
 /**
@@ -33,6 +35,30 @@ class WrappedEntity
     protected $type;
     
     /**
+     *
+     * @var bool
+     */
+    public $cretingAllowed;
+    
+    /**
+     * 
+     * @var bool
+     */
+    public $updatingAllowed;
+    
+    /**
+     *
+     * @var bool
+     */
+    public $delitingAllowed;
+    
+    /**
+     *
+     * @var bool
+     */
+    public $restoringAllowed;
+    
+    /**
      * 
      * @param int $id
      */
@@ -47,6 +73,11 @@ class WrappedEntity
         } else {
             $this->type = 'common';
         }
+        
+        $this->cretingAllowed = Gate::inspect('create', Helper::classToUlr(get_class($entity)))->allowed();
+        $this->updatingAllowed = Gate::inspect('update-record', $entity)->allowed();
+        $this->delitingAllowed = Gate::inspect('delete-record', $entity)->allowed();
+        $this->restoringAllowed = Gate::inspect('restore-record', $entity)->allowed();
     }
     
     /**

@@ -3,7 +3,6 @@
 namespace ItAces\ORM;
 
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Query\Expr\OrderBy;
 use Illuminate\Support\Arr;
@@ -76,35 +75,6 @@ class Query
      * @var string
      */
     protected $alias;
-
-    /**
-     *
-     * @param \Doctrine\ORM\EntityManager $em
-     * @param string $class
-     * @param array $parameters
-     * @param string $alias
-     * @return \ItAces\ORM\Query
-     */
-    public static function fromArray(EntityManager $em, string $class, array $parameters = [], string $alias = null) : Query
-    {
-        $instance = new static();
-        $instance->alias = $alias ? $alias : lcfirst( (new \ReflectionClass($class))->getShortName() );
-        $instance->qb = $em->createQueryBuilder()->from($class, $instance->alias);
-        $instance->select = array_key_exists('select', $parameters) ? $parameters['select'] : [];
-        $instance->join = array_key_exists('join', $parameters) ? $parameters['join'] : [];
-        $instance->filter = array_key_exists('filter', $parameters) ? $parameters['filter'] : [];
-        $instance->order = array_key_exists('order', $parameters) ? $parameters['order'] : [];
-        
-        if (!in_array($instance->alias, $instance->select)) {
-            $instance->select[] = $instance->alias;
-        }
-        
-        $instance->helper = new QueryHelper();
-        $instance->validator = new QueryValidator($instance->qb, $instance->helper, $instance->alias, $class);
-        $instance->builder = new ParameterBuilder($instance->qb, $instance->helper, $instance->alias, $class);
-        
-        return $instance;
-    }
     
     /**
      *

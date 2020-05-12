@@ -7,10 +7,14 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use ItAces\SoftDeleteable;
 use ItAces\ORM\DevelopmentException;
 use ItAces\ORM\Orderly;
 use ItAces\ORM\QueryFactory;
 use ItAces\ORM\Entities\EntityBase;
+use ItAces\Utility\Helper;
 
 /**
  * 
@@ -26,6 +30,12 @@ class Repository
     protected $em;
     
     /**
+     *
+     * @var \ItAces\ACL\AccessControl $acl
+     */
+    protected $acl;
+    
+    /**
      * 
      * @var \ItAces\ORM\Orderly
      */
@@ -34,6 +44,7 @@ class Repository
 
     public function __construct() {
         $this->em = app('em');
+        $this->acl = app('acl');
         $this->orderly = new Orderly;
     }
     
@@ -47,6 +58,7 @@ class Repository
     }
     
     /**
+     * Builds query from method parameters.
      * 
      * @param string $class
      * @param array[] $parameters
@@ -55,6 +67,7 @@ class Repository
      */
     public function getQuery(string $class, array $parameters = [], string $alias = null) : Query
     {
+        $parameters = $this->acl->addRecordsFilter($class, $parameters, $alias);
         $query = QueryFactory::fromArray($this->em, $class, $parameters, $alias)->createQueryBuilder()->getQuery();
         $this->enableCaches($query);
 
@@ -62,6 +75,7 @@ class Repository
     }
     
     /**
+     * Builds query from request and method parameters.
      *
      * @param string $class
      * @param array[] $parameters
@@ -70,6 +84,7 @@ class Repository
      */
     public function createQuery(string $class, array $parameters = [], string $alias = null) : Query
     {
+        $parameters = $this->acl->addRecordsFilter($class, $parameters, $alias);
         $query = QueryFactory::fromRequest($this->em, $class, $parameters, $alias)->createQueryBuilder()->getQuery();
         $this->enableCaches($query);
 
@@ -84,24 +99,70 @@ class Repository
     public function delete(string $class, int $id) : void
     {
         $entity = $this->findOrFail($class, $id);
-        $this->em->remove($entity);
+        Gate::authorize('delete-record', $entity);
+        
+        if ($entity instanceof SoftDeleteable) {
+            /**
+             *
+             * @var \ItAces\SoftDeleteable $object
+             */
+            $deleteable = $entity;
+            $deleteable->setDeletedAt(now());
+            
+            if (Auth::id()) {
+                $deleteable->setDeletedBy(Auth::user());
+            }
+        } else {
+            $this->em->remove($entity);
+        }
     }
     
     /**
-     * 
+     *
+     * @param string $class
+     * @param integer $id
+     */
+    public function restore(string $class, int $id) : void
+    {
+        $entity = $this->findOrFail($class, $id);
+        Gate::authorize('restore-record', $entity);
+        
+        if ($entity instanceof SoftDeleteable) {
+            /**
+             *
+             * @var \ItAces\SoftDeleteable $object
+             */
+            $deleteable = $entity;
+            $deleteable->setDeletedAt(null);
+            $deleteable->setDeletedBy(null);
+        }
+    }
+
+    /**
+     *
      * @param string $class
      * @param int $id
      * @return \ItAces\ORM\Entities\EntityBase
      */
     public function findOrFail(string $class, int $id) : EntityBase
     {
-        $element = $this->em->getRepository($class)->find($id);
+        $alias = lcfirst( (new \ReflectionClass($class))->getShortName() );
+        $parameters = [
+            'filter' => [
+                [$alias.'.id', 'eq', $id]
+            ]
+        ];
         
-        if (!$element) {
+        $parameters = $this->appendAdditionalParameters($class, $parameters, $alias);
+        $entity = $this->getQuery($class, $parameters, $alias)->getSingleResult();
+        
+        if (!$entity) {
             abort(404, 'Not found.');
         }
         
-        return $element;
+        Gate::authorize('read-record', $entity);
+        
+        return $entity;
     }
     
     /**
@@ -114,8 +175,11 @@ class Repository
      */
     public function createOrUpdate(string $class, array $data, int $id = null) : EntityBase
     {
+        $classUrlName = Helper::classToUlr($class);
+
         if ($id) {
-            $entity = $this->findOrFail($class, $id);
+            $entity = $this->findOrFail($class, $id, $isOwnerAccess);
+            Gate::authorize('update-record', $entity);
         } else {
             $entity = new $class();
         }
@@ -229,6 +293,11 @@ class Repository
             ->where("{$alias}.id IN (:ids)")
             ->setParameter('ids', $ids, Connection::PARAM_INT_ARRAY)
             ->getQuery();
+    }
+    
+    protected function appendAdditionalParameters(string $class, array $parameters = [], string $alias = null) : array
+    {
+        return $parameters;
     }
 
     protected function enableCaches(Query &$query)

@@ -3,6 +3,7 @@
 namespace ItAces\ORM;
 
 use Doctrine\ORM\EntityManager;
+use ItAces\Utility\Helper;
 
 /**
  * 
@@ -22,6 +23,7 @@ class QueryFactory
      */
     public static function fromArray(EntityManager $em, string $class, array $parameters = [], string $alias = null) : Query
     {
+        $classUrlName = Helper::classToUlr($class);
         $alias = $alias ? $alias : lcfirst( (new \ReflectionClass($class))->getShortName() );
         $select = array_key_exists('select', $parameters) ? $parameters['select'] : [];
         $join = array_key_exists('join', $parameters) ? $parameters['join'] : [];

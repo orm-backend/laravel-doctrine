@@ -52,29 +52,6 @@ class WithJoinsRepository extends Repository
         
         return parent::createQuery($class, $parameters, $alias);
     }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \ItAces\Repositories\Repository::findOrFail()
-     */
-    public function findOrFail(string $class, int $id) : EntityBase
-    {
-        $parameters = [
-            'filter' => [
-                ['e.id', 'eq', $id]
-            ]
-        ];
-        
-        $parameters = $this->appendAdditionalParameters($class, $parameters, 'e');
-        $element = $this->getQuery($class, $parameters, 'e')->getSingleResult();
-        
-        if (!$element) {
-            abort(404, 'Not found.');
-        }
-        
-        return $element;
-    }
 
     /**
      * 

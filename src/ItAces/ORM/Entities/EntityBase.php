@@ -313,10 +313,5 @@ abstract class EntityBase implements SoftDeleteable
         
         $this->{$field} = $value;
     }
-    
-    public function jsonSerialize()
-    {
-        
-    }
 
 }
