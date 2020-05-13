@@ -8,6 +8,8 @@ use ItAces\Utility\Helper;
 
 
 /**
+ * This class is the default Access Control interface implementation. Lets read everything to any guest,
+ * and only the super administrator can change anything.
  *
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
@@ -37,6 +39,12 @@ class DefaultImplementation implements AccessControl
         return 0;
     }
     
+    /**
+     * Is the current user a super administrator or not?
+     * 
+     * @param int $userId
+     * @return bool
+     */
     protected function isSuperAdmin(int $userId = null) : bool
     {
         return $userId === 1;

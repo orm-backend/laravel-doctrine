@@ -5,17 +5,18 @@ use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\Configuration;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\ServiceProvider;
+use ItAces\ACL\AccessControl;
 use ItAces\ORM\NamingStrategy;
 use ItAces\ORM\QuoteStrategy;
 use ItAces\Rules\ArrayOfInteger;
 use ItAces\Rules\PersistentCollection;
-use LaravelDoctrine\ORM\DoctrineManager;
 use ItAces\Rules\PersistentFile;
+use LaravelDoctrine\ORM\DoctrineManager;
 
 /**
  *
@@ -86,14 +87,14 @@ class PackageServiceProvider extends ServiceProvider
         );
         
         $this->app->bind(
-            \ItAces\ACL\AccessControl::class,
+            AccessControl::class,
             config('itaces.acl')
         );
         
         $this->app->singleton('acl', function($app) {
             $class = config('itaces.acl');
             return new $class;
-        });        
+        });
     }
 
 }
