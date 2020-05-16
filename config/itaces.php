@@ -8,6 +8,13 @@ return [
         'cache' => 'img'
     ],
     
+    'caches' => [
+        'enabled' => true,
+        'query_ttl' => env('DOCTRINE_QUERY_CACHE_TTL', 3600),
+        'second_ttl' => env('DOCTRINE_SECOND_CACHE_TTL', 300),
+        'result_ttl' => env('DOCTRINE_RESULT_CACHE_TTL', 300),
+    ],
+    
     'adapters' => [
         App\Model\Image::class => ItAces\Adapters\ImageAdapter::class,
     ],

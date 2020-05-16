@@ -3,6 +3,7 @@
 namespace ItAces\Repositories;
 
 /**
+ * This repository allows you to specify which exactly related objects or collections should be joined.
  * 
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *

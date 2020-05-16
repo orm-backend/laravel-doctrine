@@ -17,6 +17,7 @@ use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
 
 /**
+ * This repository does not join any data from related entities.
  * 
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
@@ -178,7 +179,7 @@ class Repository
         $classUrlName = Helper::classToUlr($class);
 
         if ($id) {
-            $entity = $this->findOrFail($class, $id, $isOwnerAccess);
+            $entity = $this->findOrFail($class, $id);
             Gate::authorize('update-record', $entity);
         } else {
             $entity = new $class();
@@ -302,17 +303,23 @@ class Repository
 
     protected function enableCaches(Query &$query)
     {
-        // Second level cache
-        if (config('doctrine.cache.second_level')) {
-            $query->disableResultCache();
-            $query->setLifetime( env('DOCTRINE_CACHE_TTL', 3600) );
-            $query->setCacheable(true);
-        }
+        if (config('itaces.caches.enabled')) {
+            // Second level cache
+            if (config('doctrine.cache.second_level')) {
+                $query->disableResultCache();
+                $query->setLifetime( config('itaces.caches.second_ttl') );
+                $query->setCacheable(true);
+            } else {
+                $query->enableResultCache( config('itaces.caches.result_ttl') );
+            }
         
-        // SQL cache
-        if (!config('app.debug')) {
-            $query->setQueryCacheLifetime(env('DOCTRINE_QUERY_CACHE_TTL', 3600));
+            // SQL cache
+            $query->setQueryCacheLifetime( config('itaces.caches.query_ttl') );
             $query->useQueryCache(true);
+        } else {
+            $query->useQueryCache(false);
+            $query->setCacheable(false);
+            $query->disableResultCache();
         }
     }
 

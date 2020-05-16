@@ -4,9 +4,9 @@ namespace ItAces\Repositories;
 
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
-use ItAces\ORM\Entities\EntityBase;
 
 /**
+ * This repository always joins all related entities and can join all related collections.
  * 
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
