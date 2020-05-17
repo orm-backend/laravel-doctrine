@@ -74,7 +74,15 @@ class PackageServiceProvider extends ServiceProvider
         
         $this->publishes([
             __DIR__.'/../../config/itaces.php' => config_path('itaces.php'),
-        ], 'config');
+        ], 'itaces-config');
+        
+        $this->publishes([
+            __DIR__.'/../../app/Model' => app_path('Model'),
+        ], 'itaces-model');
+        
+        Gate::guessPolicyNamesUsing(function ($modelClass) {
+            // Turn Off Policy Auto-Discovery
+        });
         
         Gate::define('create', 'ItAces\ACL\Policies@isAnyCreatingAllowed');
         Gate::define('read', 'ItAces\ACL\Policies@isAnyReadingAllowed');

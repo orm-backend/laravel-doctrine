@@ -4,11 +4,6 @@ namespace ItAces\ORM\Entities;
 
 abstract class User extends \ItAces\ORM\Entities\EntityBase
 {
-    
-    /**
-     * @var string
-     */
-    protected $name;
 
     /**
      * @var string
@@ -41,30 +36,6 @@ abstract class User extends \ItAces\ORM\Entities\EntityBase
     public function __construct()
     {
         $this->roles = new \Doctrine\Common\Collections\ArrayCollection();
-    }
-
-    /**
-     * Set name.
-     *
-     * @param string $name
-     *
-     * @return \ItAces\ORM\Entities\User
-     */
-    public function setName($name)
-    {
-        $this->name = $name;
-
-        return $this;
-    }
-
-    /**
-     * Get name.
-     *
-     * @return string
-     */
-    public function getName()
-    {
-        return $this->name;
     }
 
     /**

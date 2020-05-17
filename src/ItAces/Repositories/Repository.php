@@ -167,7 +167,7 @@ class Repository
         if (!$entity) {
             abort(404, 'Not found.');
         }
-        
+
         Gate::authorize('read-record', $entity);
         
         return $entity;

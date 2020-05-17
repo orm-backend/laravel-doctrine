@@ -83,13 +83,14 @@ WHERE (
 
 После установки и конфигурации пакета имеем:
 
-1. уже работающую валидацию пользовательских данных, как для поисковых запросов, так и для запросов редактирования
-2. уже работающую фильтрацию прямо по параметрам запроса, к ним даже не нужно обращаться в контроллере
-3. уже работающую сортировку
-4. уже работающую постраничную навигацию
-5. готовые сервисы API
-6. набор фиксов для интеграции пакета laravel-doctrine
-7. продуманную структуру классов, которые легко использовать по отдельности или переопределять
+1. санитарную обработку введенных пользователем данных
+2. валидацию введенных пользователем данных
+3. фильтрацию прямо по параметрам запроса, к ним даже не нужно обращаться в контроллере
+4. сортировку
+5. постраничную навигацию
+6. готовые сервисы API
+7. набор фиксов для интеграции пакета laravel-doctrine
+8. продуманную структуру классов, которые легко использовать по отдельности или переопределять
 
 Пример контроллера API:
 
@@ -130,20 +131,116 @@ public function index(Request  $request)
 При правильной конфигурации и использовании вторичного кеширования можно ожидать, что запросы на выборку данных для их отображения вообще не будут производиться. Если кто-то отредактирует объект, то ORM просто заменит его во вторичном кеше.
 Для такого подхода необходимо принять, что **минимальной единицей информации для обмена данными с БД является объект**. Не следует производить выборку отдельных полей объекта. С этим надо согласиться, либо не использовать данные ORM.
 
-## V. Перспективы
-Хотелось бы в итоге получить следующий процесс разработки:
+## V. Установка
+1. Подразумевается, что Laravel уже установлен и настроено соединения с базой данных. Добавляем репозиторий в composer.json
 
-1. создаем UML диаграмму и БД по ней
-2. конфигурируем проект
-3. генерируем маппинг и классы ORM посредством обратной инженерии 
-4. редактируем маппинг
-5. и на этом этапе в административной части уже имеем меню, пункты которого обеспечивают доступ к редактированию и полнофункциональному поиску данных в сгенеренных сущностях, с возможностью экспорта в xml, excel
-6. создаем контроллеры из нескольких строк кода и данный функционал готов для публичной части
-7. пишем что-то кастомное
-
-## VI. Установка
 ```BASH
-php artisan vendor:publish --provider="ItAces\PackageServiceProvider"
+"repositories": [
+    {
+       "type": "vcs",
+       "url": "git@bitbucket.org:vitaliy_kovalenko/laravel-doctrine.git"
+    }
+]
 ```
+
+2. Устанавливаем пакеты
+
+```BASH
+composer install
+```
+
+3. Публикуем сущности User и Role с минимальным набором полей. При необходимости изменяем правила валидации и добавляем новые поля.
+
+```BASH
+php artisan vendor:publish --tag="itaces-model"
+```
+4. Необязательно. Для редактирования настроек публикуем файл конфинурации.
+
+```BASH
+php artisan vendor:publish --tag="itaces-config"
+```
+
+## VI. Настройка
+1. Редактируем config/doctrine.php. Устанавливаем managers.default.meta в значение simplified_xml. Так как проект использует Simplified Xml Driver для работы с метаданными сущностей, необходимо, чтобы ключи массива managers.default.paths являлись полными путями к катологам моделей, а значениями пространства имен соответствующих моделей. При разработке модели рекомендуется наследовать сущности от родительский классов (например, в каталоге App\Entities). Это дает возможность управлять маппингом в родительских классах (XML код),  а правила валидации и другие PHP методы прописывать в App\Model. В итоге должно получиться примерно так:
+
+```PHP
+'default' => [
+    'dev'           => env('APP_DEBUG', false),
+    'meta'          => env('DOCTRINE_METADATA', 'simplified_xml'),
+    'connection'    => env('DB_CONNECTION', 'mysql'),
+    'namespaces'    => [],
+    'paths'         => [
+        base_path('app/Model') => 'App\Model',
+        //base_path('app/Entities') => 'App\Entities',
+    ],
+    'repository'    => Doctrine\ORM\EntityRepository::class,
+    'proxies'       => [
+        'namespace'     => false,
+        'path'          => storage_path('proxies'),
+        'auto_generate' => env('DOCTRINE_PROXY_AUTOGENERATE', false)
+    ]
+```
+
+2. Редактируем config/database.php секцию mysql. Доюавляем ключ connections.mysql.serverVersion и устанавливаем его в значение, соответствующее версии используемого сервера базы данных. Это позволит избежать установок множества соединений для автоопределение версии, когда при использовании кеша фактически запросы к базе не выполняются. Проверяем, что ключ connections.mysql.unix_socket отсутствует или закомментирован. В итоге:
+
+```PHP
+'mysql' => [
+    'driver' => 'mysql',
+    'url' => env('DATABASE_URL'),
+    'host' => env('DB_HOST', '127.0.0.1'),
+    'port' => env('DB_PORT', '3306'),
+    'database' => env('DB_DATABASE', 'forge'),
+    'username' => env('DB_USERNAME', 'forge'),
+    'password' => env('DB_PASSWORD', ''),
+    //'unix_socket' => env('DB_SOCKET', ''),
+    'charset' => 'utf8mb4',
+    'collation' => 'utf8mb4_unicode_ci',
+    'prefix' => '',
+    'prefix_indexes' => true,
+    'strict' => true,
+    'engine' => 'innodb',
+    'options' => [
+    ],
+    'serverVersion' => '5.7.28' // IMPORTANT! prevents queries for auto-detection
+],
+```
+
+3. Редактируем config/auth.php. Устанавливаем значение doctrine для ключа providers.users.driver и проверяем, что в providers.users.model установлен App\Model\User::class. В итоге:
+
+```PHP
+'providers' => [
+    'users' => [
+        'driver' => 'doctrine',
+        'model' => App\Model\User::class,
+    ],
+],
+```
+
+## VII. Запуск
+1. Проверяем маппинг. Должны получить _[Mapping]  OK - The mapping files are correct._ И ошибку _[Database] FAIL - The database schema is not in sync with the current mapping file._
+
+```BASH
+php artisan doctrine:schema:validate
+
+Validating for default entity manager...
+[Mapping]  OK - The mapping files are correct.
+[Database] FAIL - The database schema is not in sync with the current mapping file.
+```
+
+2. Синхронизируем модель с БД.
+
+```BASH
+php artisan doctrine:schema:update
+ 
+Checking if database connected to default entity manager needs updating...
+Updating database schema...
+Database schema updated successfully! "1" query was executed
+```
+3. Запускаем сервер и проверяем доступность сервисов по адресу http://127.0.0.1:8000/api/entities/app-model-user/. Должен прийти пустой список:
+
+```JSON
+ {"data":[],"links":{"path":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user","first_page_url":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user?page=1","prev_page_url":null,"next_page_url":null},"meta":{"current_page":1,"per_page":20,"from":null,"to":null}}
+```
+
 
 
