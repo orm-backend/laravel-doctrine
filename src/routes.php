@@ -20,11 +20,11 @@ Route::group([
     Route::group([
         'prefix' => 'entities'
     ], function () {
-        Route::get('/{name}', 'ApiController@search')->middleware('can:read,name');
-        Route::post('/{name}/search', 'ApiController@search')->middleware('can:read,name');
-        Route::post('/{name}/create', 'ApiController@create')->middleware('can:create,name');
-        Route::get('/{name}/read/{id}', 'ApiController@read')->middleware('can:read,name');
-        Route::put('/{name}/update/{id}', 'ApiController@update')->middleware('can:update,name');
-        Route::delete('/{name}/delete/{id}', 'ApiController@delete')->middleware('can:delete,name');
+        Route::get('/{model}', 'ApiController@search')->middleware('can:read,model');
+        Route::post('/{model}/search', 'ApiController@search')->middleware('can:read,model');
+        Route::post('/{model}/create', 'ApiController@create')->middleware('can:create,model');
+        Route::get('/{model}/read/{id}', 'ApiController@read')->middleware('can:read,model');
+        Route::put('/{model}/update/{id}', 'ApiController@update')->middleware('can:update,model');
+        Route::delete('/{model}/delete/{id}', 'ApiController@delete')->middleware('can:delete,model');
     });
 });

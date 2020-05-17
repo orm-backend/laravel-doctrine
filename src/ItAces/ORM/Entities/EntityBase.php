@@ -5,9 +5,11 @@ namespace ItAces\ORM\Entities;
 use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use ItAces\SoftDeleteable;
 use ItAces\ORM\DevelopmentException;
+use ItAces\Types\FileType;
 
 abstract class EntityBase implements SoftDeleteable
 {
@@ -206,7 +208,7 @@ abstract class EntityBase implements SoftDeleteable
     }
     
     /**
-     * @ORM\PrePersist
+     * 
      * @param \Doctrine\Common\Persistence\Event\LifecycleEventArgs $event
      */
     public function onBeforeAdd(LifecycleEventArgs $event)
@@ -221,7 +223,7 @@ abstract class EntityBase implements SoftDeleteable
     }
 
     /**
-     * @ORM\PostPersist
+     * 
      * @param \Doctrine\Common\Persistence\Event\LifecycleEventArgs $event
      */
     public function onAfterAdd(LifecycleEventArgs $event)
@@ -230,7 +232,7 @@ abstract class EntityBase implements SoftDeleteable
     }
 
     /**
-     * @ORM\PreUpdate
+     * 
      * @param \Doctrine\Common\Persistence\Event\LifecycleEventArgs $event
      */
     public function onBeforeUpdate(LifecycleEventArgs $event)
@@ -245,7 +247,7 @@ abstract class EntityBase implements SoftDeleteable
     }
 
     /**
-     * @ORM\PostUpdate
+     * 
      * @param \Doctrine\Common\Persistence\Event\LifecycleEventArgs $event
      */
     public function onAfterUpdate(LifecycleEventArgs $event)
@@ -254,7 +256,7 @@ abstract class EntityBase implements SoftDeleteable
     }
 
     /**
-     * @ORM\PreRemove
+     * 
      * @param \Doctrine\Common\Persistence\Event\LifecycleEventArgs $event
      */
     public function onBeforeDelete(LifecycleEventArgs $event)
@@ -263,12 +265,19 @@ abstract class EntityBase implements SoftDeleteable
     }
 
     /**
-     * @ORM\PostRemove
+     * 
      * @param \Doctrine\Common\Persistence\Event\LifecycleEventArgs $event
      */
     public function onAfterDelete(LifecycleEventArgs $event)
     {
-        // Add your code here
+        if ($this instanceof FileType) {
+            /**
+             * 
+             * @var \ItAces\Types\FileType $file
+             */
+            $file = $this;
+            Storage::delete($file->getPath());
+        }
     }
     
     protected function validate()

@@ -18,7 +18,11 @@ class DoctrineListener
         foreach ($em->getUnitOfWork()->getScheduledEntityDeletions() as $object) {
             if ($object instanceof SoftDeleteable) {
                 $object->setDeletedAt(now());
-                $object->setDeletedBy(Auth::user());
+                
+                if (Auth::id()) {
+                    $object->setDeletedBy(Auth::user());
+                }
+                
                 $em->persist($object);
             }
         }

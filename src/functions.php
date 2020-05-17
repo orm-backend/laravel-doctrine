@@ -45,6 +45,10 @@ if (! function_exists('file_mimetype')) {
      */
     function file_mimetype($path)
     {
+        if (!file_exists($path)) {
+            return null;
+        }
+        
         return shell_exec('file -b --mime-type ' . $path . ' | tr -d "\n"');
     }
 }
@@ -53,7 +57,11 @@ if (! function_exists('file_human_size')) {
 
     function file_human_size($path, $unit = "")
     {
-        $size = filesize($path);
+        $size = 0;
+        
+        if (file_exists($path)) {
+            $size = filesize($path);
+        }
         
         if ((! $unit && $size >= 1 << 30) || $unit == "GB") {
             return number_format($size / (1 << 30), 2) . " GB";

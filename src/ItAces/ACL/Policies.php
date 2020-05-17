@@ -76,7 +76,7 @@ class Policies
      */
     public function isAnyRestoringAllowed(?EntityBase $user, string $classUrlName) : bool
     {
-        return $this->acl->isAnyRestoringAllowed($user, $classUrlName);
+        return config('itaces.softdelete', true) && $this->acl->isAnyRestoringAllowed($user, $classUrlName);
     }
     
     /**
@@ -120,7 +120,7 @@ class Policies
      */
     public function isRestoringAllowed(?EntityBase $user, EntityBase $entity) : bool
     {
-        return $this->acl->isRestoringAllowed($user, $entity);
+        return config('itaces.softdelete', true) && $this->acl->isRestoringAllowed($user, $entity);
     }
     
 }

@@ -20,6 +20,8 @@ return [
     ],
     
     'acl' => ItAces\ACL\DefaultImplementation::class,
+    
+    'softdelete' => true,
 
     'perms' => [
         'forbidden' => 1,

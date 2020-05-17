@@ -24,6 +24,10 @@ class ImageController
     public function resize(Request $request, string $mode, int $width, int $height) {
         $src = $request->get('src');
         
+        if (!Storage::exists($src)) {
+            abort(404);
+        }
+        
         if (substr( $src, 0, 1 ) == '/') {
             $src = substr( $src, 1 );
         }

@@ -5,6 +5,7 @@ namespace ItAces\Repositories;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Illuminate\Support\Facades\Auth;
@@ -102,7 +103,7 @@ class Repository
         $entity = $this->findOrFail($class, $id);
         Gate::authorize('delete-record', $entity);
         
-        if ($entity instanceof SoftDeleteable) {
+        if (($entity instanceof SoftDeleteable) && config('itaces.softdelete', true)) {
             /**
              *
              * @var \ItAces\SoftDeleteable $object
@@ -155,7 +156,13 @@ class Repository
         ];
         
         $parameters = $this->appendAdditionalParameters($class, $parameters, $alias);
-        $entity = $this->getQuery($class, $parameters, $alias)->getSingleResult();
+        $entity = null;
+        
+        try {
+            $entity = $this->getQuery($class, $parameters, $alias)->getSingleResult();
+        } catch (NoResultException $e) {
+            abort(404, 'Not found.');
+        }
         
         if (!$entity) {
             abort(404, 'Not found.');
@@ -305,7 +312,7 @@ class Repository
     {
         if (config('itaces.caches.enabled')) {
             // Second level cache
-            if (config('doctrine.cache.second_level')) {
+            if ($this->em->getConfiguration()->isSecondLevelCacheEnabled()) {
                 $query->disableResultCache();
                 $query->setLifetime( config('itaces.caches.second_ttl') );
                 $query->setCacheable(true);

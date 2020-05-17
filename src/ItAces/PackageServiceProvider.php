@@ -1,22 +1,25 @@
 <?php
 namespace ItAces;
 
-use Doctrine\Common\EventManager;
-use Doctrine\DBAL\Connection;
-use Doctrine\ORM\Configuration;
+use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Events;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use ItAces\ACL\AccessControl;
+use ItAces\DBAL\Types\CarbonDate;
+use ItAces\DBAL\Types\CarbonDateTime;
+use ItAces\Filters\SoftDeleteFilter;
+use ItAces\Listener\DoctrineListener;
 use ItAces\ORM\NamingStrategy;
 use ItAces\ORM\QuoteStrategy;
 use ItAces\Rules\ArrayOfInteger;
 use ItAces\Rules\PersistentCollection;
 use ItAces\Rules\PersistentFile;
-use LaravelDoctrine\ORM\DoctrineManager;
 
 /**
  *
@@ -28,18 +31,29 @@ class PackageServiceProvider extends ServiceProvider
     /**
      * Bootstrap the application services.
      *
-     * @param \LaravelDoctrine\ORM\DoctrineManager $manager
+     * @param \Doctrine\ORM\EntityManagerInterface $manager
      * 
      * @return void
      */
-    public function boot(DoctrineManager $manager)
+    public function boot(EntityManagerInterface $manager)
     {
-        $manager->extendAll(function (Configuration $configuration, Connection $connection, EventManager $eventManager) {
-            // modify and access settings as is needed
-            $configuration->setQuoteStrategy(new QuoteStrategy());
-            $configuration->setNamingStrategy(new NamingStrategy());
-        });
-            
+        $manager->getConfiguration()->setQuoteStrategy(new QuoteStrategy());
+        $manager->getConfiguration()->setNamingStrategy(new NamingStrategy());
+        
+        if (config('itaces.softdelete', true)) {
+            $manager->getConfiguration()->addFilter('softdelete', SoftDeleteFilter::class);
+            $manager->getFilters()->enable('softdelete');
+            $manager->getEventManager()->addEventListener(Events::preFlush, app()->make(DoctrineListener::class));
+        }
+        
+        $this->bootModel(
+            $manager,
+            [
+                base_path('vendor/it-aces/laravel-doctrine/src/ItAces/ORM/Entities') => 'ItAces\ORM\Entities'
+            ],
+            'ItAces\ORM\Entities'
+        );
+        
         Carbon::serializeUsing(function ($carbon) {
             return $carbon->format('U');
         });
@@ -86,6 +100,10 @@ class PackageServiceProvider extends ServiceProvider
             __DIR__.'/../../config/itaces.php', 'itaces'
         );
         
+        $this->addType(Types::DATE_MUTABLE, CarbonDate::class);
+        $this->addType(Types::DATETIME_MUTABLE, CarbonDateTime::class);
+        $this->addType(Types::DATETIMETZ_MUTABLE, CarbonDateTime::class);
+        
         $this->app->bind(
             AccessControl::class,
             config('itaces.acl')
@@ -95,6 +113,21 @@ class PackageServiceProvider extends ServiceProvider
             $class = config('itaces.acl');
             return new $class;
         });
+    }
+    
+    /**
+     * @param $name
+     * @param $class
+     *
+     * @throws \Doctrine\DBAL\DBALException
+     */
+    private function addType($name, $class)
+    {
+        if (!Type::hasType($name)) {
+            Type::addType($name, $class);
+        } else {
+            Type::overrideType($name, $class);
+        }
     }
 
 }
