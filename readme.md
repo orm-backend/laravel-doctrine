@@ -132,7 +132,7 @@ public function index(Request  $request)
 Для такого подхода необходимо принять, что **минимальной единицей информации для обмена данными с БД является объект**. Не следует производить выборку отдельных полей объекта. С этим надо согласиться, либо не использовать данные ORM.
 
 ## V. Установка
-1. Подразумевается, что Laravel уже установлен и настроено соединения с базой данных. Добавляем репозиторий в composer.json
+1. Подразумевается, что Laravel уже установлен и настроено соединение с базой данных. Добавляем репозиторий в composer.json
 
 ```BASH
 "repositories": [
@@ -146,18 +146,35 @@ public function index(Request  $request)
 2. Устанавливаем пакеты
 
 ```BASH
-composer install
+composer require it-aces/laravel-doctrine
+composer update
 ```
 
 3. Публикуем сущности User и Role с минимальным набором полей. При необходимости изменяем правила валидации и добавляем новые поля.
 
 ```BASH
 php artisan vendor:publish --tag="itaces-model"
+
+Copied Directory [/vendor/it-aces/laravel-doctrine/app/Model] To [/app/Model]
+Publishing complete.
 ```
-4. Необязательно. Для редактирования настроек публикуем файл конфинурации.
+
+4. Публикуем файл конфинурации Doctrine.
+
+```BASH
+php artisan vendor:publish --tag="config"
+
+Copied File [/vendor/laravel-doctrine/orm/config/doctrine.php] To [/config/doctrine.php]
+Publishing complete.
+```
+
+5. Необязательно. Для редактирования настроек публикуем файл конфинурации.
 
 ```BASH
 php artisan vendor:publish --tag="itaces-config"
+
+Copied File [/vendor/it-aces/laravel-doctrine/config/itaces.php] To [/config/itaces.php]
+Publishing complete.
 ```
 
 ## VI. Настройка
@@ -181,7 +198,7 @@ php artisan vendor:publish --tag="itaces-config"
     ]
 ```
 
-2. Редактируем config/database.php секцию mysql. Доюавляем ключ connections.mysql.serverVersion и устанавливаем его в значение, соответствующее версии используемого сервера базы данных. Это позволит избежать установок множества соединений для автоопределение версии, когда при использовании кеша фактически запросы к базе не выполняются. Проверяем, что ключ connections.mysql.unix_socket отсутствует или закомментирован. В итоге:
+2. Редактируем config/database.php секцию mysql. Доюавляем ключ connections.mysql.serverVersion и устанавливаем его в значение, соответствующее версии используемого сервера базы данных. Это позволит избежать установок множества соединений для автоопределение версии, когда при использовании кеша фактически запросы к базе не выполняются. Проверяем, что ключ connections.mysql.unix_socket отсутствует или закомментирован. Значению connections.mysql.options присваиваем пустой массив. В итоге:
 
 ```PHP
 'mysql' => [
@@ -234,13 +251,13 @@ php artisan doctrine:schema:update
  
 Checking if database connected to default entity manager needs updating...
 Updating database schema...
-Database schema updated successfully! "1" query was executed
+Database schema updated successfully! "11" query was executed
 ```
 3. Запускаем сервер и проверяем доступность сервисов по адресу http://127.0.0.1:8000/api/entities/app-model-user/. Должен прийти пустой список:
 
 ```JSON
- {"data":[],"links":{"path":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user","first_page_url":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user?page=1","prev_page_url":null,"next_page_url":null},"meta":{"current_page":1,"per_page":20,"from":null,"to":null}}
+{"data":[],"links":{"path":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user","first_page_url":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user?page=1","prev_page_url":null,"next_page_url":null},"meta":{"current_page":1,"per_page":20,"from":null,"to":null}}
 ```
 
-
-
+## VIII. Далее
+Этот пакет использует реализацию по-умолчанию интерфейса ACL при которой пользователю с ID = 1 можно абсолютно все, а всем другим, включая не авторизованных, разрешено только чтение. Для управления ролями пользователей и раздачи привилегий установите пакет it-aces/laravel-doctrine-acl.
