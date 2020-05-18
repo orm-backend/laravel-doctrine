@@ -75,6 +75,7 @@ class WrappedEntity
         }
         
         $this->cretingAllowed = Gate::inspect('create', Helper::classToUlr(get_class($entity)))->allowed();
+        $this->readingAllowed = Gate::inspect('read-record', $entity)->allowed();
         $this->updatingAllowed = Gate::inspect('update-record', $entity)->allowed();
         $this->delitingAllowed = Gate::inspect('delete-record', $entity)->allowed();
         $this->restoringAllowed = Gate::inspect('restore-record', $entity)->allowed();
@@ -122,7 +123,7 @@ class WrappedEntity
      */
     public function field(string $name)
     {
-        return $this->fields[$name];
+        return isset($this->fields[$name]) ? $this->fields[$name] : null;
     }
 
 }

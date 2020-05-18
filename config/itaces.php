@@ -19,12 +19,13 @@ return [
         App\Model\Image::class => ItAces\Adapters\ImageAdapter::class,
     ],
     
-    'acl' => ItAces\ACL\DefaultImplementation::class,
+    'acl' => ItAces\ACL\ManagedImplementation::class,
     
-    'groups' => [
+    'roles' => [
         'default' => 'registered',
-        'guests' => 'visitors',
-        'administrators' => 'admins'
+        'guest' => 'visitor',
+        'administrator' => 'admin',
+        'dashboard' => 'dashboard'
     ],
     
     'softdelete' => true,

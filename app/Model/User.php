@@ -31,7 +31,6 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Und
     public function getModelValidationRules()
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'max:255', 'email:rfc,dns', 'unique:App\Model\User,email,'.$this->getId()],
             'roles' => ['required', 'persistentcollection:App\Model\Role,1']
         ];

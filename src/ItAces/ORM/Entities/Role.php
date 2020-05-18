@@ -18,6 +18,12 @@ abstract class Role extends \ItAces\ORM\Entities\EntityBase
     protected $name;
     
     /**
+     *
+     * @var integer
+     */
+    protected $permission;
+    
+    /**
      * 
      * @var boolean
      */
@@ -69,6 +75,22 @@ abstract class Role extends \ItAces\ORM\Entities\EntityBase
     public function getName()
     {
         return $this->name;
+    }
+    
+    /**
+     * @return integer
+     */
+    public function getPermission()
+    {
+        return $this->permission;
+    }
+    
+    /**
+     * @param integer $permission
+     */
+    public function setPermission(int $permission)
+    {
+        $this->permission = $permission;
     }
     
     /**

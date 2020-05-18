@@ -1,6 +1,8 @@
 <?php
 namespace ItAces\ACL;
 
+use App\Model\Role;
+use App\Model\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use ItAces\ORM\Entities\EntityBase;
@@ -16,6 +18,21 @@ use ItAces\Utility\Helper;
  */
 class DefaultImplementation implements AccessControl
 {
+    
+    /**
+     * 
+     * @var \Doctrine\ORM\EntityManager
+     */
+    protected $em;
+    
+    /**
+     * 
+     */
+    public function __construct()
+    {
+        $this->em = app('em');
+    }
+    
     /**
      * Gets default user permissions as bitmask
      * 
@@ -24,7 +41,16 @@ class DefaultImplementation implements AccessControl
      */
     protected function getDefaultPermissions(int $userId = null) : int
     {
-        return $this->isSuperAdmin($userId) ? config('itaces.perms.full') : config('itaces.perms.guest.read');
+        $permissions = 0;
+        $roles = $this->getUserRoles($userId);
+
+        if ($roles) {
+            foreach ($roles as $role) {
+                $permissions = $permissions | $role->getPermission();
+            }
+        }
+        
+        return $permissions ? $permissions : config('itaces.perms.forbidden');
     }
 
     /**
@@ -81,7 +107,7 @@ class DefaultImplementation implements AccessControl
         $bitmask = config('itaces.perms.guest.create') | config('itaces.perms.entity.create');
         $perms = $this->permissions($classUrlName, $userId);
         
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : $perms & $bitmask;
+        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
     }
     
     /**
@@ -98,7 +124,7 @@ class DefaultImplementation implements AccessControl
         $bitmask = config('itaces.perms.guest.read') | config('itaces.perms.entity.read') | config('itaces.perms.record.read');
         $perms = $this->permissions($classUrlName, $userId);
         
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : $perms & $bitmask;
+        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
     }
     
     /**
@@ -114,8 +140,8 @@ class DefaultImplementation implements AccessControl
         
         $bitmask = config('itaces.perms.guest.update') | config('itaces.perms.entity.update') | config('itaces.perms.record.update');
         $perms = $this->permissions($classUrlName, $userId);
-        
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : $perms & $bitmask;
+
+        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
     }
     
     /**
@@ -132,7 +158,7 @@ class DefaultImplementation implements AccessControl
         $bitmask = config('itaces.perms.guest.delete') | config('itaces.perms.entity.delete') | config('itaces.perms.record.delete');
         $perms = $this->permissions($classUrlName, $userId);
         
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : $perms & $bitmask;
+        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
     }
     
     /**
@@ -149,7 +175,34 @@ class DefaultImplementation implements AccessControl
         $bitmask = config('itaces.perms.entity.restore') | config('itaces.perms.record.restore');
         $perms = $this->permissions($classUrlName, $userId);
         
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : $perms & $bitmask;
+        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
+    }
+    
+    /**
+     *
+     * @param int $userId
+     * @return \App\Model\Role[]
+     */
+    protected function getUserRoles(int $userId = null)
+    {
+        $roles = [];
+        
+        if (!$userId) {
+            $role = $this->em->getRepository(Role::class)->findOneBy(['code' => config('itaces.roles.guest', 'guest')]);
+            
+            if ($role) {
+                $roles[] = $role;
+            }
+        } else {
+            /**
+             *
+             * @var \App\Model\User $user
+             */
+            $user = $this->em->getRepository(User::class)->find($userId);
+            $roles = $user->getRoles()->getValues();
+        }
+
+        return $roles;
     }
     
     /**
@@ -275,12 +328,16 @@ class DefaultImplementation implements AccessControl
         if (!$user) {
             return (bool) ($permissions & config('itaces.perms.guest.read'));
         }
+
+        if ($permissions & config('itaces.perms.entity.read')) {
+            return true;
+        }
         
         if ($permissions & config('itaces.perms.record.read')) {
-            return $userId === $entity->getCreatedBy()->getId();
+            return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
         }
 
-        return (bool) ($permissions & config('itaces.perms.entity.read'));
+        return false;
     }
 
     /**
@@ -293,7 +350,7 @@ class DefaultImplementation implements AccessControl
         $userId = $user ? $user->getId() : null;
         $classUrlName = Helper::classToUlr(get_class($entity));
         $permissions = $this->getUpdateAccess($classUrlName, $userId);
-        
+
         if (!$permissions) {
             return false;
         }
@@ -302,11 +359,15 @@ class DefaultImplementation implements AccessControl
             return (bool) ($permissions & config('itaces.perms.guest.update'));
         }
         
-        if ($permissions & config('itaces.perms.record.update')) {
-            return $userId === $entity->getCreatedBy()->getId();
+        if ($permissions & config('itaces.perms.entity.update')) {
+            return true;
         }
         
-        return (bool) ($permissions & config('itaces.perms.entity.update'));
+        if ($permissions & config('itaces.perms.record.update')) {
+            return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
+        }
+
+        return false;
     }
 
     /**
@@ -328,11 +389,15 @@ class DefaultImplementation implements AccessControl
             return (bool) ($permissions & config('itaces.perms.guest.delete'));
         }
         
-        if ($permissions & config('itaces.perms.record.delete')) {
-            return $userId === $entity->getCreatedBy()->getId();
+        if ($permissions & config('itaces.perms.entity.delete')) {
+            return true;
         }
         
-        return (bool) ($permissions & config('itaces.perms.entity.delete'));
+        if ($permissions & config('itaces.perms.record.delete')) {
+            return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
+        }
+        
+        return false;
     }
 
     /**
@@ -354,11 +419,15 @@ class DefaultImplementation implements AccessControl
             return (bool) ($permissions & config('itaces.perms.guest.restore', 0));
         }
         
-        if ($permissions & config('itaces.perms.record.restore')) {
-            return $userId === $entity->getCreatedBy()->getId();
+        if ($permissions & config('itaces.perms.entity.restore')) {
+            return true;
         }
         
-        return (bool) ($permissions & config('itaces.perms.entity.restore'));
+        if ($permissions & config('itaces.perms.record.restore')) {
+            return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
+        }
+        
+        return false;
     }
 
     /**

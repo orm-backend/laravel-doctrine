@@ -7,11 +7,10 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use ItAces\SoftDeleteable;
 use ItAces\ORM\DevelopmentException;
 use ItAces\Types\FileType;
 
-abstract class EntityBase implements SoftDeleteable
+abstract class EntityBase
 {
 
     /**

@@ -267,7 +267,10 @@ Database schema updated successfully! "11" query was executed
 
 ```BASH
 php artisan db:seed --class="ItAces\Database\Seeds\RoleTableSeeder"
+Database seeding completed successfully.
+
 php artisan db:seed --class="ItAces\Database\Seeds\UserTableSeeder"
+Database seeding completed successfully.
 ```
 
 * Запускаем сервер и проверяем доступность сервисов по адресу http://127.0.0.1:8000/api/entities/app-model-user/
