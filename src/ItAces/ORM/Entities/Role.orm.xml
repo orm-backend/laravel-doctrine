@@ -6,6 +6,7 @@
 	<mapped-superclass name="ItAces\ORM\Entities\Role">
 		<indexes>
 			<index name="role_name_index" columns="name" />
+			<index name="role_system_index" columns="system" />
 			<index name="role_created_at_index" columns="created_at" />
 			<index name="role_updated_at_index" columns="updated_at" />
 			<index name="role_deleted_at_index" columns="deleted_at" />
@@ -24,6 +25,12 @@
 		<field name="name" type="string" column="name" length="255" nullable="true">
 			<options>
 				<option name="fixed" />
+			</options>
+		</field>
+		<field name="system" type="boolean" column="system" nullable="false">
+			<options>
+				<option name="fixed" />
+				<option name="default">0</option>
 			</options>
 		</field>
 		<association-overrides>

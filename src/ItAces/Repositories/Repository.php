@@ -163,10 +163,6 @@ class Repository
         } catch (NoResultException $e) {
             abort(404, 'Not found.');
         }
-        
-        if (!$entity) {
-            abort(404, 'Not found.');
-        }
 
         Gate::authorize('read-record', $entity);
         

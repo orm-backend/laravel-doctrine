@@ -1,8 +1,8 @@
 # Расширения для интеграции laravel-doctrine
 
-## I. Битрикс-подобное формирование SQL запросов
+## I. Джейсон-подобное формирование SQL запросов
 
-Простой джейсон-подобный код. Не требует знания Doctrine. Без каких-либо дополнительных средств позволяет конвертировать:
+Без каких-либо дополнительных средств позволяет конвертировать:
 
 1. Из параметров запроса -- автоматически сервером **PHP**
 2. В параметры запроса -- http\_build\_query (built-in function) **PHP**
@@ -90,7 +90,7 @@ WHERE (
 5. постраничную навигацию
 6. готовые сервисы API
 7. набор фиксов для интеграции пакета laravel-doctrine
-8. продуманную структуру классов, которые легко использовать по отдельности или переопределять
+8. интеграцию интерфейса ACL
 
 Пример контроллера API:
 
@@ -132,7 +132,8 @@ public function index(Request  $request)
 Для такого подхода необходимо принять, что **минимальной единицей информации для обмена данными с БД является объект**. Не следует производить выборку отдельных полей объекта. С этим надо согласиться, либо не использовать данные ORM.
 
 ## V. Установка
-1. Подразумевается, что Laravel уже установлен и настроено соединение с базой данных. Добавляем репозиторий в composer.json
+
+* Подразумевается, что Laravel уже установлен и настроено соединение с базой данных. Добавляем репозиторий в composer.json
 
 ```BASH
 "repositories": [
@@ -143,14 +144,14 @@ public function index(Request  $request)
 ]
 ```
 
-2. Устанавливаем пакеты
+* Устанавливаем пакеты
 
 ```BASH
 composer require it-aces/laravel-doctrine
 composer update
 ```
 
-3. Публикуем сущности User и Role с минимальным набором полей. При необходимости изменяем правила валидации и добавляем новые поля.
+* Публикуем сущности User и Role с минимальным набором полей. При необходимости изменяем правила валидации и добавляем новые поля.
 
 ```BASH
 php artisan vendor:publish --tag="itaces-model"
@@ -159,7 +160,13 @@ Copied Directory [/vendor/it-aces/laravel-doctrine/app/Model] To [/app/Model]
 Publishing complete.
 ```
 
-4. Публикуем файл конфинурации Doctrine.
+* Публикуем сидеры.
+
+```BASH
+php artisan vendor:publish --tag="itaces-seeds"
+```
+
+* Публикуем файл конфинурации Doctrine.
 
 ```BASH
 php artisan vendor:publish --tag="config"
@@ -168,7 +175,7 @@ Copied File [/vendor/laravel-doctrine/orm/config/doctrine.php] To [/config/doctr
 Publishing complete.
 ```
 
-5. Необязательно. Для редактирования настроек публикуем файл конфинурации.
+* Необязательно. Для редактирования настроек публикуем файл конфинурации.
 
 ```BASH
 php artisan vendor:publish --tag="itaces-config"
@@ -178,7 +185,8 @@ Publishing complete.
 ```
 
 ## VI. Настройка
-1. Редактируем config/doctrine.php. Устанавливаем managers.default.meta в значение simplified_xml. Так как проект использует Simplified Xml Driver для работы с метаданными сущностей, необходимо, чтобы ключи массива managers.default.paths являлись полными путями к катологам моделей, а значениями пространства имен соответствующих моделей. При разработке модели рекомендуется наследовать сущности от родительский классов (например, в каталоге App\Entities). Это дает возможность управлять маппингом в родительских классах (XML код),  а правила валидации и другие PHP методы прописывать в App\Model. В итоге должно получиться примерно так:
+
+* Редактируем config/doctrine.php. Устанавливаем managers.default.meta в значение simplified_xml. Так как проект использует Simplified Xml Driver для работы с метаданными сущностей, необходимо, чтобы ключи массива managers.default.paths являлись полными путями к катологам моделей, а значениями пространства имен соответствующих моделей. При разработке модели рекомендуется наследовать сущности от родительский классов (например, в каталоге App\Entities). Это дает возможность управлять маппингом в родительских классах (XML код),  а правила валидации и другие PHP методы прописывать в App\Model. В итоге должно получиться примерно так:
 
 ```PHP
 'default' => [
@@ -198,7 +206,7 @@ Publishing complete.
     ]
 ```
 
-2. Редактируем config/database.php секцию mysql. Доюавляем ключ connections.mysql.serverVersion и устанавливаем его в значение, соответствующее версии используемого сервера базы данных. Это позволит избежать установок множества соединений для автоопределение версии, когда при использовании кеша фактически запросы к базе не выполняются. Проверяем, что ключ connections.mysql.unix_socket отсутствует или закомментирован. Значению connections.mysql.options присваиваем пустой массив. В итоге:
+* Редактируем config/database.php секцию mysql. Доюавляем ключ connections.mysql.serverVersion и устанавливаем его в значение, соответствующее версии используемого сервера базы данных. Это позволит избежать установок множества соединений для автоопределение версии, когда при использовании кеша фактически запросы к базе не выполняются. Проверяем, что ключ connections.mysql.unix_socket отсутствует или закомментирован. Значению connections.mysql.options присваиваем пустой массив. В итоге:
 
 ```PHP
 'mysql' => [
@@ -222,7 +230,7 @@ Publishing complete.
 ],
 ```
 
-3. Редактируем config/auth.php. Устанавливаем значение doctrine для ключа providers.users.driver и проверяем, что в providers.users.model установлен App\Model\User::class. В итоге:
+* Редактируем config/auth.php. Устанавливаем значение doctrine для ключа providers.users.driver и проверяем, что в providers.users.model установлен App\Model\User::class. В итоге:
 
 ```PHP
 'providers' => [
@@ -234,7 +242,8 @@ Publishing complete.
 ```
 
 ## VII. Запуск
-1. Проверяем маппинг. Должны получить _[Mapping]  OK - The mapping files are correct._ И ошибку _[Database] FAIL - The database schema is not in sync with the current mapping file._
+
+* Проверяем маппинг. Должны получить _[Mapping]  OK - The mapping files are correct._ И ошибку _[Database] FAIL - The database schema is not in sync with the current mapping file._
 
 ```BASH
 php artisan doctrine:schema:validate
@@ -244,7 +253,7 @@ Validating for default entity manager...
 [Database] FAIL - The database schema is not in sync with the current mapping file.
 ```
 
-2. Синхронизируем модель с БД.
+* Синхронизируем модель с БД.
 
 ```BASH
 php artisan doctrine:schema:update
@@ -253,11 +262,19 @@ Checking if database connected to default entity manager needs updating...
 Updating database schema...
 Database schema updated successfully! "11" query was executed
 ```
-3. Запускаем сервер и проверяем доступность сервисов по адресу http://127.0.0.1:8000/api/entities/app-model-user/. Должен прийти пустой список:
+
+* Создаем группы и администратора с логином _admin@it-aces.com_ и паролем _doctrine_
+
+```BASH
+php artisan db:seed --class="ItAces\Database\Seeds\RoleTableSeeder"
+php artisan db:seed --class="ItAces\Database\Seeds\UserTableSeeder"
+```
+
+* Запускаем сервер и проверяем доступность сервисов по адресу http://127.0.0.1:8000/api/entities/app-model-user/
 
 ```JSON
 {"data":[],"links":{"path":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user","first_page_url":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user?page=1","prev_page_url":null,"next_page_url":null},"meta":{"current_page":1,"per_page":20,"from":null,"to":null}}
 ```
 
 ## VIII. Далее
-Этот пакет использует реализацию по-умолчанию интерфейса ACL, при которой пользователю с ID равным 1 можно абсолютно все, а всем другим, включая не авторизованных, разрешено только чтение. Вы можете создать свою реализацию этого интерфейса и подключить ее в конфигурации itaces.acl. Установка пакета it-aces/laravel-doctrine-acl поможет создать управление правами по-умолчанию и для сущности.
+Этот пакет использует реализацию по-умолчанию интерфейса ACL, при которой пользователю с ID равным 1 можно абсолютно все, а всем другим, включая не авторизованных, разрешено только чтение. Вы можете создать свою реализацию этого интерфейса _\ItAces\ACL\AccessControl_ и подключить ее в конфигурации itaces.acl. Установка пакета **it-aces/laravel-doctrine-acl** даст возможность сохранять права доступа групп и переопределять их на сущностях в базе данных.

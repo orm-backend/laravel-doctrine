@@ -21,7 +21,8 @@
     },
     "autoload": {
         "psr-4": {
-        	"ItAces\\": "src/ItAces"
+        	"ItAces\\": "src/ItAces/",
+        	"ItAces\\Database\\Seeds\\": "database/seeds/"
         },
         "files": [
             "src/functions.php"

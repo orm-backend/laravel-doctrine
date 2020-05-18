@@ -16,6 +16,12 @@ abstract class Role extends \ItAces\ORM\Entities\EntityBase
      * @var string|null
      */
     protected $name;
+    
+    /**
+     * 
+     * @var boolean
+     */
+    protected $system;
 
     /**
      * Set code.
@@ -63,6 +69,22 @@ abstract class Role extends \ItAces\ORM\Entities\EntityBase
     public function getName()
     {
         return $this->name;
+    }
+    
+    /**
+     * @return boolean
+     */
+    public function isSystem()
+    {
+        return $this->system;
+    }
+
+    /**
+     * @param boolean $system
+     */
+    public function setSystem(bool $system)
+    {
+        $this->system = $system;
     }
 
 }

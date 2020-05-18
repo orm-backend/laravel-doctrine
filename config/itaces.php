@@ -21,6 +21,12 @@ return [
     
     'acl' => ItAces\ACL\DefaultImplementation::class,
     
+    'groups' => [
+        'default' => 'registered',
+        'guests' => 'visitors',
+        'administrators' => 'admins'
+    ],
+    
     'softdelete' => true,
 
     'perms' => [

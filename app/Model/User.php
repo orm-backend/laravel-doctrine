@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Model;
 
 use Illuminate\Contracts\Auth\Access\Authorizable;
@@ -47,7 +46,7 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Und
     {
         return [
             'password' => ['sometimes', 'required', 'string', 'min:8', 'confirmed'],
-            'roles' => ['sometimes', 'required', 'arrayofinteger:1', 'exists:App\Model\Role,id']
+            'roles' => ['sometimes', 'nullable', 'arrayofinteger:1', 'exists:App\Model\Role,id']
         ];
     }
 
