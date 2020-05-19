@@ -5,6 +5,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use ItAces\DBAL\Types\EnumType;
@@ -299,6 +300,10 @@ class FieldContainer
                 !$association['isOwningSide']) {
                 continue;
             }
+            
+            if (!Gate::check('read', Helper::classToUlr($association['targetEntity']))) {
+                continue;
+            }
 
             if (in_array(ImageType::class, class_implements($association['targetEntity']))) {
                 if ($association['type'] & ClassMetadataInfo::TO_ONE) {
@@ -376,6 +381,10 @@ class FieldContainer
                 continue;
             }
             
+            if (!Gate::check('read', Helper::classToUlr($association['targetEntity']))) {
+                continue;
+            }
+            
             if ($association['type'] & ClassMetadataInfo::TO_ONE) {
                 if (!$association['isOwningSide']) {
                     continue;
@@ -418,7 +427,11 @@ class FieldContainer
             if (array_search($fieldName, $classMetadata->fieldNames) !== false) {
                 $fields[] = BaseField::getInstance($classMetadata, $fieldName, $entity);
             } else if ($classMetadata->hasAssociation($fieldName)) {
-                $fields[] = ReferenceField::getInstance($classMetadata, $fieldName, $entity);
+                $association = $classMetadata->getAssociationMapping($fieldName);
+                
+                if (Gate::check('read', Helper::classToUlr($association['targetEntity']))) {
+                    $fields[] = ReferenceField::getInstance($classMetadata, $fieldName, $entity);
+                }
             }
         }
         
