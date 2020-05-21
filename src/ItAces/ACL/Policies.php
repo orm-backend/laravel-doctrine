@@ -32,7 +32,7 @@ class Policies
      */
     public function isAnyCreatingAllowed(?EntityBase $user, string $classUrlName) : bool
     {
-        return $this->acl->isAnyCreatingAllowed($user, $classUrlName);
+        return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyCreatingAllowed($user, $classUrlName);
     }
     
     /**
@@ -43,7 +43,7 @@ class Policies
      */
     public function isAnyReadingAllowed(?EntityBase $user, string $classUrlName) : bool
     {
-        return $this->acl->isAnyReadingAllowed($user, $classUrlName);
+        return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyReadingAllowed($user, $classUrlName);
     }
     
     /**
@@ -54,7 +54,7 @@ class Policies
      */
     public function isAnyUpdatingAllowed(?EntityBase $user, string $classUrlName) : bool
     {
-        return $this->acl->isAnyUpdatingAllowed($user, $classUrlName);
+        return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyUpdatingAllowed($user, $classUrlName);
     }
     
     /**
@@ -65,7 +65,7 @@ class Policies
      */
     public function isAnyDeletingAllowed(?EntityBase $user, string $classUrlName) : bool
     {
-        return $this->acl->isAnyDeletingAllowed($user, $classUrlName);
+        return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyDeletingAllowed($user, $classUrlName);
     }
     
     /**
@@ -76,7 +76,7 @@ class Policies
      */
     public function isAnyRestoringAllowed(?EntityBase $user, string $classUrlName) : bool
     {
-        return config('itaces.softdelete', true) && $this->acl->isAnyRestoringAllowed($user, $classUrlName);
+        return config('itaces.softdelete', true) && ($this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyRestoringAllowed($user, $classUrlName));
     }
     
     /**
@@ -87,7 +87,7 @@ class Policies
      */
     public function isReadingAllowed(?EntityBase $user, EntityBase $entity) : bool
     {
-        return $this->acl->isReadingAllowed($user, $entity);
+        return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isReadingAllowed($user, $entity);
     }
     
     /**
@@ -98,7 +98,7 @@ class Policies
      */
     public function isUpdatingAllowed(?EntityBase $user, EntityBase $entity) : bool
     {
-        return $this->acl->isUpdatingAllowed($user, $entity);
+        return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isUpdatingAllowed($user, $entity);
     }
     
     /**
@@ -109,7 +109,7 @@ class Policies
      */
     public function isDeletingAllowed(?EntityBase $user, EntityBase $entity) : bool
     {
-        return $this->acl->isDeletingAllowed($user, $entity);
+        return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isDeletingAllowed($user, $entity);
     }
     
     /**

@@ -71,7 +71,7 @@ class DefaultImplementation implements AccessControl
      * @param int $userId
      * @return bool
      */
-    protected function isSuperAdmin(int $userId = null) : bool
+    public function isSuperAdmin(int $userId = null) : bool
     {
         return $userId === 1;
     }
@@ -100,10 +100,6 @@ class DefaultImplementation implements AccessControl
      */
     protected function getCreateAccess(string $classUrlName, int $userId = null) : int
     {
-        if ($this->isSuperAdmin($userId)) {
-            return config('itaces.perms.entity.create');
-        }
-        
         $bitmask = config('itaces.perms.guest.create') | config('itaces.perms.entity.create');
         $perms = $this->permissions($classUrlName, $userId);
         
@@ -117,10 +113,6 @@ class DefaultImplementation implements AccessControl
      */
     protected function getReadAccess(string $classUrlName, int $userId = null) : int
     {
-        if ($this->isSuperAdmin($userId)) {
-            return config('itaces.perms.entity.read');
-        }
-        
         $bitmask = config('itaces.perms.guest.read') | config('itaces.perms.entity.read') | config('itaces.perms.record.read');
         $perms = $this->permissions($classUrlName, $userId);
         
@@ -134,10 +126,6 @@ class DefaultImplementation implements AccessControl
      */
     protected function getUpdateAccess(string $classUrlName, int $userId = null) : int
     {
-        if ($this->isSuperAdmin($userId)) {
-            return config('itaces.perms.entity.update');
-        }
-        
         $bitmask = config('itaces.perms.guest.update') | config('itaces.perms.entity.update') | config('itaces.perms.record.update');
         $perms = $this->permissions($classUrlName, $userId);
 
@@ -151,10 +139,6 @@ class DefaultImplementation implements AccessControl
      */
     protected function getDeleteAccess(string $classUrlName, int $userId = null) : int
     {
-        if ($this->isSuperAdmin($userId)) {
-            return config('itaces.perms.entity.delete');
-        }
-        
         $bitmask = config('itaces.perms.guest.delete') | config('itaces.perms.entity.delete') | config('itaces.perms.record.delete');
         $perms = $this->permissions($classUrlName, $userId);
         
@@ -168,10 +152,6 @@ class DefaultImplementation implements AccessControl
      */
     protected function getRestoreAccess(string $classUrlName, int $userId = null) : int
     {
-        if ($this->isSuperAdmin($userId)) {
-            return config('itaces.perms.entity.restore');
-        }
-        
         $bitmask = config('itaces.perms.entity.restore') | config('itaces.perms.record.restore');
         $perms = $this->permissions($classUrlName, $userId);
         
@@ -243,8 +223,8 @@ class DefaultImplementation implements AccessControl
         if (!$user) {
             return (bool) ($permissions & config('itaces.perms.guest.read'));
         }
-        
-        return (bool) ($permissions & config('itaces.perms.entity.read'));
+
+        return ($permissions & config('itaces.perms.entity.read')) || ($permissions & config('itaces.perms.record.read'));
     }
     
     /**
@@ -265,7 +245,7 @@ class DefaultImplementation implements AccessControl
             return (bool) ($permissions & config('itaces.perms.guest.update'));
         }
         
-        return (bool) ($permissions & config('itaces.perms.entity.update'));
+        return ($permissions & config('itaces.perms.entity.update')) || ($permissions & config('itaces.perms.record.update'));
     }
     
     /**
@@ -286,7 +266,7 @@ class DefaultImplementation implements AccessControl
             return (bool) ($permissions & config('itaces.perms.guest.delete'));
         }
         
-        return (bool) ($permissions & config('itaces.perms.entity.delete'));
+        return ($permissions & config('itaces.perms.entity.delete')) || ($permissions & config('itaces.perms.record.delete'));
     }
     
     /**
@@ -307,7 +287,7 @@ class DefaultImplementation implements AccessControl
             return (bool) ($permissions & config('itaces.perms.guest.restore'));
         }
         
-        return (bool) ($permissions & config('itaces.perms.entity.restore'));
+        return ($permissions & config('itaces.perms.entity.restore')) || ($permissions & config('itaces.perms.record.restore'));
     }
     
     /**
@@ -437,9 +417,13 @@ class DefaultImplementation implements AccessControl
      */
     public function addRecordsFilter(string $class, array $parameters = [], string $alias = null) : array
     {
-        $classUrlName = Helper::classToUlr($class);
-        $permissions = $this->getReadAccess($classUrlName);
+        if ($this->isSuperAdmin(auth()->id())) {
+            return $parameters;
+        }
         
+        $classUrlName = Helper::classToUlr($class);
+        $permissions = $this->getReadAccess($classUrlName, auth()->id());
+
         if (!$permissions) {
             throw new AuthorizationException();
         }
@@ -457,7 +441,7 @@ class DefaultImplementation implements AccessControl
                 Auth::id()
             ];
         }
-        
+
         return $parameters;
     }
 

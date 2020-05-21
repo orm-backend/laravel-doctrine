@@ -14,6 +14,14 @@ use ItAces\ORM\Entities\EntityBase;
 interface AccessControl
 {
     /**
+     * Is the current user a super administrator or not?
+     *
+     * @param int $userId
+     * @return bool
+     */
+    public function isSuperAdmin(int $userId = null) : bool;
+    
+    /**
      * Does the current user or guest have any write permissions or not? For example,
      * if the specified entity is allowed to create a record for a guest or a given user,
      * the method should return true.

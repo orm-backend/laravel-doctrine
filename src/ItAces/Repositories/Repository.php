@@ -306,23 +306,14 @@ class Repository
 
     protected function enableCaches(Query &$query)
     {
-        if (config('itaces.caches.enabled')) {
-            // Second level cache
-            if ($this->em->getConfiguration()->isSecondLevelCacheEnabled()) {
-                $query->disableResultCache();
-                $query->setLifetime( config('itaces.caches.second_ttl') );
-                $query->setCacheable(true);
-            } else {
-                $query->enableResultCache( config('itaces.caches.result_ttl') );
-            }
-        
-            // SQL cache
-            $query->setQueryCacheLifetime( config('itaces.caches.query_ttl') );
-            $query->useQueryCache(true);
-        } else {
-            $query->useQueryCache(false);
-            $query->setCacheable(false);
-            $query->disableResultCache();
+        /**
+         * Query cache should always be used in conjunction with the second-level-cache for
+         * those entities which should be cached. The query cache stores the results of the
+         * query but as identifiers, entity values are actually stored in the 2nd level cache.
+         */
+        if ($this->em->getConfiguration()->isSecondLevelCacheEnabled()) {
+            $query->setLifetime( $this->em->getConfiguration()->getSecondLevelCacheConfiguration()->getRegionsConfiguration()->getDefaultLifetime() );
+            $query->setCacheable(true);
         }
     }
 
