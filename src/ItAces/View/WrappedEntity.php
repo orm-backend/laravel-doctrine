@@ -60,11 +60,18 @@ class WrappedEntity
     
     /**
      * 
+     * @var string
+     */
+    public $classUrlName;
+    
+    /**
+     * 
      * @param int $id
      */
     public function __construct(EntityBase $entity)
     {
         $this->id = $entity->getId();
+        $this->classUrlName = Helper::classToUlr(get_class($entity));
         
         if ($entity instanceof ImageType) {
             $this->type = 'image';

@@ -6,15 +6,13 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use ItAces\Uploader;
 use ItAces\DBAL\Types\EnumType;
 use ItAces\ORM\Entities\EntityBase;
-use ItAces\Utility\Helper;
 use ItAces\Types\FileType;
 use ItAces\Types\ImageType;
-use ItAces\Uploader;
-use ItAces\ORM\DevelopmentException;
+use ItAces\Utility\Helper;
 
 /**
  * 
@@ -75,12 +73,114 @@ class FieldContainer
         }
     }
     
+    /**
+     * Adding the entity to the container
+     *
+     * @param \ItAces\ORM\Entities\EntityBase $entity
+     */
+    public function addEntity(EntityBase $entity)
+    {
+        $className = get_class($entity);
+        $classMetadata = $this->em->getClassMetadata($className);
+        $this->entities[] = $this->wrapEntity($classMetadata, $entity);
+    }
+    
+    /**
+     * Adding the entity container to the container
+     *
+     * @param \ItAces\ORM\Entities\EntityBase[] $data
+     */
+    public function addCollection(array $data)
+    {
+        foreach ($data as $entity) {
+            $this->addEntity($entity);
+        }
+    }
+    
+    /**
+     * Building the class field meta information.
+     *
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
+     */
+    public function buildMetaFields(ClassMetadata $classMetadata)
+    {
+        $this->fields[] = BaseField::getInstance($classMetadata, 'id');
+        $this->fields = array_merge($this->fields, $this->buildMetadataOfSimpleFields($classMetadata));
+        $this->fields = array_merge($this->fields, $this->buildMetadataOfFileFields($classMetadata));
+        $this->fields = array_merge($this->fields, $this->buildMetadataOfAssociationFields($classMetadata));
+        $this->fields = array_merge($this->fields, $this->buildMetadataOfInternalFields($classMetadata));
+    }
+    
+    /**
+     * Converting array data with keys of one format to another format, setting default values ​​and storing files on disk.
+     * The input key format looks like this:
+     * <code>app-model-class_name</code>
+     * The output format:
+     * <code>App\Model\ClassName</code>
+     *
+     * @param array $request
+     * @throws \Illuminate\Validation\ValidationException
+     * array $storedFiles
+     * @return array
+     */
+    public static function readRequest(array $request, array &$storedFiles = null) : array
+    {
+        $map = [];
+        
+        foreach ($request as $classUrlName => $data) {
+            if (!is_array($data)) {
+                continue;
+            }
+
+            $className = Helper::classFromUlr($classUrlName);
+            $map[$className] = self::readEntity($className, $data, $storedFiles);
+        }
+        
+        return $map;
+    }
+    
+    /**
+     *
+     * @return \ItAces\View\WrappedEntity[]
+     */
+    public function entities()
+    {
+        return $this->entities;
+    }
+    
+    /**
+     * Getting field meta information
+     *
+     * @return \ItAces\View\MetaField[]
+     */
+    public function fields()
+    {
+        return $this->fields;
+    }
+    
+    /**
+     * Getting the first entity from the container
+     *
+     * @return \ItAces\View\WrappedEntity|null
+     */
+    public function first()
+    {
+        return isset($this->entities[0]) ? $this->entities[0] : null;
+    }
+    
+    /**
+     * Appending a class name to exceprion messages.
+     * 
+     * @param ValidationException $e
+     * @param string $classUrlName
+     * @return array
+     */
     public static function exceptionToMessages(ValidationException $e, string $classUrlName) : array
     {
         $messages = $e->validator->getMessageBag()->getMessages();
         
         foreach ($messages as $key => $value) {
-            $newKey = $classUrlName.'.'.$key;
+            $newKey = $classUrlName.'['.$key.']';
             $messages[$newKey] = $value;
             unset($messages[$key]);
         }
@@ -89,115 +189,113 @@ class FieldContainer
     }
     
     /**
-     *
+     * 
+     * @param string $className
      * @param array $data
-     * @throws \Illuminate\Validation\ValidationException
+     * @param array $storedFiles
      * @return array
      */
-    public static function readRequest(array $data) : array
+    protected static function readEntity(string $className, array $data, array &$storedFiles = null) : array
     {
-        $map = [];
-        
-        foreach ($data as $key => $value) {
-            if (strrpos($key, '_file')) {
-                continue;
-            }
-            
-            [$className, $fieldName] = self::extractFieldName($key);
-            
-            if (!$className || !$fieldName) {
-                continue;
-            }
-
-            if (!array_key_exists($className, $map)) {
-                $map[$className] = [];
-            }
-
-            $map[$className][$fieldName] = $value;
-        }
+        $entityData = [];
+        $entity = new $className();
 
         /**
          *
          * @var \Doctrine\ORM\EntityManager $em
          */
         $em = app('em');
-        /**
-         * 
-         * @var \Illuminate\Http\Request $request
-         */
-        $request = request();
-        $files = $request->allFiles();
+        $classMetadata = $em->getClassMetadata($className);
+        $classUrlName = Helper::classToUlr($classMetadata->name);
+        $entityFiles = request()->file($classUrlName);
         
-        foreach ($files as $key => $file) {
-            $key = substr($key, 0, strrpos($key, '_file'));
+        foreach ($classMetadata->associationMappings as $association) {
+            $targetEntity = $association['targetEntity'];
+            $fieldName = $association['fieldName'];
             
-            if (!$key) {
-                // Input name does not ends with _file, ignoring
+            if (in_array($fieldName, self::INTERNAL_FIELDS)) {
                 continue;
             }
-            /**
-             *
-             * @var \Illuminate\Http\UploadedFile $uploadedFile
-             */
-            $uploadedFile = $file;
-            [$className, $fieldName] = self::extractFieldName($key);
             
-            if (!$className || !$fieldName) {
-                throw new DevelopmentException("Incorrect input name `{$key}`");
-            }
-            
-            $classMetadata = $em->getClassMetadata($className);
-            
-            if ($classMetadata->hasAssociation($fieldName)) {
-                $association = $classMetadata->getAssociationMapping($fieldName);
+            if (in_array(FileType::class, class_implements($targetEntity)) && !empty($entityFiles[$fieldName])) {
+//                 if (!$entityFiles || empty($entityFiles[$fieldName])) {
+//                     continue;
+//                 }
                 
-                if (in_array(FileType::class, class_implements($association['targetEntity']))) {
-                    $isImage = in_array(ImageType::class, class_implements($association['targetEntity']));
-                    $targetEntity = $association['targetEntity'];
-                    Validator::make([$fieldName => $uploadedFile], $targetEntity::getRequestValidationRules())->validate();
+                $fieldFiles = $entityFiles[$fieldName];
+                $inputName = $classUrlName . '[' . $fieldName . ']';
+                $type = FileType::class;
+                
+                if (in_array(ImageType::class, class_implements($targetEntity))) {
+                    $type = ImageType::class;
+                }
+                
+                if ($association['type'] & ClassMetadataInfo::TO_ONE) {
+                    $fileEntity = self::storeFile($fieldFiles, $targetEntity, $inputName, $type);
+                    $entityData[$fieldName] = $fileEntity;
                     
-                    if ($association['type'] & ClassMetadataInfo::TO_ONE) {
-                        $map[$className][$fieldName] = self::storeFile($uploadedFile, $targetEntity, $key, $isImage);
-                    } else if ($association['type'] & ClassMetadataInfo::TO_MANY) {
-                        if (!is_array($map[$className][$fieldName])) {
-                            $map[$className][$fieldName] = [];
-                        }
+                    if ($storedFiles !== null) {
+                        $storedFiles[] = $fileEntity;
+                    }
+                } else if ($association['type'] & ClassMetadataInfo::TO_MANY) {
+                    $entityData[$fieldName] = [];
+                    
+                    foreach ($fieldFiles as $uploadedFile) {
+                        $fileEntity = self::storeFile($uploadedFile, $targetEntity, $inputName, $type);
+                        $entityData[$fieldName][] = $fileEntity;
                         
-                        if (is_array($uploadedFile)) {
-                            foreach ($uploadedFile as $file) {
-                                $map[$className][$fieldName][] = self::storeFile($file, $targetEntity, $key, $isImage);
-                            }
-                        } else {
-                            $map[$className][$fieldName][] = self::storeFile($uploadedFile, $targetEntity, $key, $isImage);
+                        if ($storedFiles !== null) {
+                            $storedFiles[] = $fileEntity;
                         }
                     }
                 }
+            } else if (isset($data[$fieldName])) {
+                $entityData[$fieldName] = $data[$fieldName];
+            }
+        }
+        
+        foreach ($classMetadata->fieldNames as $fieldName) {
+            if ($fieldName != 'id' && in_array($fieldName, self::INTERNAL_FIELDS)) {
+                continue;
+            }
+            
+            if (isset($data[$fieldName])) {
+                $entityData[$fieldName] = $data[$fieldName];
+            } else {
+                // Setting default value
+                $entityData[$fieldName] = $entity->{$fieldName};
             }
         }
 
-        return $map;
+        return $entityData;
     }
     
     /**
      * 
      * @param UploadedFile $uploadedFile
      * @param string $targetEntity
-     * @param string $key
-     * @param bool $isImage
+     * @param string $inputName
+     * @param string $type
      * @throws \Illuminate\Validation\ValidationException
      * @return \ItAces\ORM\Entities\EntityBase
      */
-    protected static function storeFile(UploadedFile $uploadedFile, string $targetEntity, string $key, bool $isImage) : EntityBase
+    protected static function storeFile(UploadedFile $uploadedFile, string $targetEntity, string $inputName, string $type) : EntityBase
     {
-        if ($isImage) {
-            $path = Uploader::storeImage($uploadedFile, $key);
+        if ($uploadedFile->getError() === UPLOAD_ERR_INI_SIZE) { // Fix Laravel Validation
+            throw ValidationException::withMessages([
+                $inputName => [__('File size too large.')],
+            ]);
+        }
+        
+        if ($type == ImageType::class) {
+            $path = Uploader::storeImage($uploadedFile, $inputName);
         } else {
-            $path = Uploader::storeDocument($uploadedFile, $key);
+            $path = Uploader::storeDocument($uploadedFile, $inputName);
         }
 
         if (!$path) {
             throw ValidationException::withMessages([
-                $key => [__('Failed to store file.')],
+                $inputName => [__('Failed to store file.')],
             ]);
         }
 
@@ -210,43 +308,6 @@ class FieldContainer
         $fileEntity->setPath($path);
         
         return $fileEntity;
-    }
-    
-    static protected function extractFieldName(string $key) : array
-    {
-        $className = null;
-        $fieldName = null;
-        $lastUnderscore = strripos($key, '_');
-        
-        if ($lastUnderscore) {
-            $classUrlName = substr($key, 0, strripos($key, '_'));
-            $fieldName = substr($key, strripos($key, '_') + 1);
-            $className = Helper::classFromUlr($classUrlName);
-        }
-        
-        return [$className, $fieldName];
-    }
-    
-    /**
-     * 
-     * @param \ItAces\ORM\Entities\EntityBase $entity
-     */
-    public function addEntity(EntityBase $entity)
-    {
-        $className = get_class($entity);
-        $classMetadata = $this->em->getClassMetadata($className);
-        $this->entities[] = $this->wrapEntity($classMetadata, $entity);
-    }
-    
-    /**
-     * 
-     * @param \ItAces\ORM\Entities\EntityBase[] $data
-     */
-    public function addCollection(array $data)
-    {
-        foreach ($data as $entity) {
-            $this->addEntity($entity);
-        }
     }
     
     /**
@@ -270,19 +331,6 @@ class FieldContainer
         }
         
         return $wrapped;
-    }
-
-    /**
-     * 
-     * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
-     */
-    public function buildMetaFields(ClassMetadata $classMetadata)
-    {
-        $this->fields[] = BaseField::getInstance($classMetadata, 'id');
-        $this->fields = array_merge($this->fields, $this->buildMetadataOfSimpleFields($classMetadata));
-        $this->fields = array_merge($this->fields, $this->buildMetadataOfFileFields($classMetadata));
-        $this->fields = array_merge($this->fields, $this->buildMetadataOfAssociationFields($classMetadata));
-        $this->fields = array_merge($this->fields, $this->buildMetadataOfInternalFields($classMetadata));
     }
 
     /**
@@ -436,33 +484,6 @@ class FieldContainer
         }
         
         return $fields;
-    }
-    
-    /**
-     * 
-     * @return \ItAces\View\WrappedEntity[]
-     */
-    public function entities()
-    {
-        return $this->entities;
-    }
-    
-    /**
-     * 
-     * @return \ItAces\View\MetaField[]
-     */
-    public function fields()
-    {
-        return $this->fields;
-    }
-    
-    /**
-     * 
-     * @return \ItAces\View\WrappedEntity|null
-     */
-    public function first()
-    {
-        return isset($this->entities[0]) ? $this->entities[0] : null;
     }
 
 }

@@ -127,7 +127,7 @@ abstract class MetaField
         $this->class = $classMetadata->name;
         $this->classUrlName = Helper::classToUlr($this->class);
         $this->aliasname = lcfirst((new \ReflectionClass($this->class))->getShortName()) .'.'. $this->name;
-        $this->fullname = Helper::classToUlr($this->class) .'.'. $this->name;
+        $this->fullname = Helper::classToUlr($this->class) .'['. $this->name . ']';
         $this->title = $this->name == 'id' ? 'ID' : __(Str::pluralCamelWords( ucfirst($this->name), 1));
         $this->autohide = $this->name != 'id' && !$this->name != 'name' && !$this->name != 'code';
         
