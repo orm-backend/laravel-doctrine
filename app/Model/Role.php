@@ -1,10 +1,12 @@
 <?php
+
 namespace App\Model;
 
+use ItAces\SoftDeleteable;
 use ItAces\UnderAdminControl;
 
 
-class Role extends \ItAces\ORM\Entities\Role implements UnderAdminControl
+class Role extends \ItAces\ORM\Entities\Role implements SoftDeleteable, UnderAdminControl
 {
     /**
      *

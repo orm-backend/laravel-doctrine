@@ -1,14 +1,16 @@
 <?php
+
 namespace App\Model;
 
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use ItAces\SoftDeleteable;
 use ItAces\UnderAdminControl;
 
 class User extends \ItAces\ORM\Entities\User
-implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, UnderAdminControl
+implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, SoftDeleteable, UnderAdminControl
 {
     use \Illuminate\Auth\Passwords\CanResetPassword;
     use \Illuminate\Foundation\Auth\Access\Authorizable;
@@ -31,7 +33,9 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Und
     public function getModelValidationRules()
     {
         return [
-            'email' => ['required', 'string', 'max:255', 'email:rfc,dns', 'unique:App\Model\User,email,'.$this->getId()],
+            // Does not allow guests to read users. An exception will be thrown if the email is not unique.
+            //'email' => ['required', 'string', 'max:255', 'email:rfc,dns', 'unique:App\Model\User,email,'.$this->getId()],
+            'email' => ['required', 'string', 'max:255', 'email:rfc,dns'],
             'roles' => ['required', 'persistentcollection:App\Model\Role,1']
         ];
     }
@@ -45,8 +49,20 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Und
     {
         return [
             'password' => ['sometimes', 'required', 'string', 'min:8', 'confirmed'],
-            'roles' => ['sometimes', 'nullable', 'arrayofinteger:1', 'exists:App\Model\Role,id']
+            'roles' => ['sometimes', 'nullable', 'arrayofinteger', 'exists:App\Model\Role,id']
         ];
+    }
+
+    /**
+     * 
+     * @param string $code
+     * @return bool
+     */
+    public function hasRole(string $code) : bool
+    {
+        return $this->getRoles()->exists(function(int $i, Role $role) use($code) {
+            return $role->getCode() === $code;
+        });
     }
 
 }
