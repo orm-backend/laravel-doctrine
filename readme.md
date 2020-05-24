@@ -179,6 +179,16 @@ Publishing complete.
 
 ## VI. Настройка
 
+* Редактируем .env
+
+```BASH
+DOCTRINE_PROXY_AUTOGENERATE=1
+DOCTRINE_CACHE=file
+DOCTRINE_RESULT_CACHE=array
+DOCTRINE_SECOND_CACHE_TTL=3600
+DOCTRINE_RESULT_CACHE_TTL=120
+```
+
 * Редактируем config/doctrine.php. Устанавливаем managers.default.meta в значение simplified_xml. Так как проект использует Simplified Xml Driver для работы с метаданными сущностей, необходимо, чтобы ключи массива managers.default.paths являлись полными путями к катологам моделей, а значениями пространства имен соответствующих моделей. При разработке модели рекомендуется наследовать сущности от родительский классов (например, в каталоге App\Entities). Это дает возможность управлять маппингом в родительских классах (XML код),  а правила валидации и другие PHP методы прописывать в App\Model. В итоге должно получиться примерно так:
 
 ```PHP
@@ -269,7 +279,7 @@ Database seeding completed successfully.
 * Запускаем сервер и проверяем доступность сервисов по адресу http://127.0.0.1:8000/api/entities/app-model-user/
 
 ```JSON
-{"data":[],"links":{"path":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user","first_page_url":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user?page=1","prev_page_url":null,"next_page_url":null},"meta":{"current_page":1,"per_page":20,"from":null,"to":null}}
+{"data":[{"createdAt":"1590328480","updatedAt":null,"deletedAt":null,"id":1,"email":"admin@it-aces.com","emailVerifiedAt":"1590328480","createdBy":null,"updatedBy":null,"deletedBy":null,"roles":[{"createdAt":"1590328473","updatedAt":null,"deletedAt":null,"id":2,"code":"admin","name":"Administrators","permission":992,"system":true}]}],"links":{"path":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user","first_page_url":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user?page=1","prev_page_url":null,"next_page_url":null},"meta":{"current_page":1,"per_page":20,"from":1,"to":1}}
 ```
 
 ## VIII. Далее
