@@ -218,10 +218,6 @@ class FieldContainer
             }
             
             if (in_array(FileType::class, class_implements($targetEntity)) && !empty($entityFiles[$fieldName])) {
-//                 if (!$entityFiles || empty($entityFiles[$fieldName])) {
-//                     continue;
-//                 }
-                
                 $fieldFiles = $entityFiles[$fieldName];
                 $inputName = $classUrlName . '[' . $fieldName . ']';
                 $type = FileType::class;
@@ -253,9 +249,9 @@ class FieldContainer
                 $entityData[$fieldName] = $data[$fieldName];
             }
         }
-        
+
         foreach ($classMetadata->fieldNames as $fieldName) {
-            if ($fieldName != 'id' && in_array($fieldName, self::INTERNAL_FIELDS)) {
+            if ($fieldName != $classMetadata->identifier[0] && in_array($fieldName, self::INTERNAL_FIELDS)) {
                 continue;
             }
             

@@ -183,8 +183,8 @@ class Repository
         if ($id === null && isset($data['id'])) {
             $id = (int) $data['id'];
         }
-        
-        if (isset($data['id'])) {
+
+        if (array_key_exists('id', $data)) {
             unset($data['id']); // Prevents setting ID value
         }
 

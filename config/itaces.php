@@ -14,7 +14,7 @@ return [
     ],
     
     'adapters' => [
-        App\Model\Image::class => ItAces\Adapters\ImageAdapter::class,
+        //App\Model\Image::class => ItAces\Adapters\ImageAdapter::class,
     ],
     
     'acl' => ItAces\ACL\DefaultImplementation::class,
