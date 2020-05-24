@@ -148,7 +148,6 @@ public function index(Request  $request)
 
 ```BASH
 composer require it-aces/laravel-doctrine
-composer update
 ```
 
 * Публикуем сущности User и Role с минимальным набором полей. При необходимости изменяем правила валидации и добавляем новые поля.
