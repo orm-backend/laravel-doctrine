@@ -80,9 +80,9 @@ class PackageServiceProvider extends ServiceProvider
             __DIR__.'/../../app/Model' => app_path('Model'),
         ], 'itaces-model');
         
-        $this->publishes([
-            __DIR__.'/../../database/seeds' => database_path('seeds'),
-        ], 'itaces-seeds');
+//         $this->publishes([
+//             __DIR__.'/../../database/seeds' => database_path('seeds'),
+//         ], 'itaces-seeds');
         
         Gate::guessPolicyNamesUsing(function ($modelClass) {
             // Turn Off Policy Auto-Discovery

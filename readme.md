@@ -160,12 +160,6 @@ Copied Directory [/vendor/it-aces/laravel-doctrine/app/Model] To [/app/Model]
 Publishing complete.
 ```
 
-* Публикуем сидеры.
-
-```BASH
-php artisan vendor:publish --tag="itaces-seeds"
-```
-
 * Публикуем файл конфинурации Doctrine.
 
 ```BASH
