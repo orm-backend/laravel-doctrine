@@ -60,7 +60,7 @@ class PackageServiceProvider extends ServiceProvider
 
         if (config('app.debug', false)) {
             Event::listen('Illuminate\Database\Events\QueryExecuted', function ($query) {
-                if (! str_contains($query->sql, 'oauth')) {
+                if (strpos($query->sql, 'oauth') === false) {
                     Log::info($query->sql, $query->bindings);
                 }
             });
