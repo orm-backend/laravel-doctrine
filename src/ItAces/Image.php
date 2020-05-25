@@ -25,6 +25,9 @@ class Image
             return null;
         }
         
+        $disk = config('filesystems.default');
+        $rootPath = config("filesystems.disks.{$disk}.root");
+        $rootUrl = config("filesystems.disks.{$disk}.url");
         $cached = self::cachePath($path, $mode, $width, $height);
         
         if (substr( $cached, 0, 1 ) == '/') {
@@ -32,7 +35,7 @@ class Image
         }
         
         if (Storage::exists($cached)) {
-            return '/' . $cached;
+            return $rootUrl . '/' .  $cached;
         }
         
         return route('image.resize', [

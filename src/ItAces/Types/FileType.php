@@ -20,4 +20,6 @@ interface FileType extends UnderAdminControl
     
     public function getPath();
 
+    public function url();
+    
 }

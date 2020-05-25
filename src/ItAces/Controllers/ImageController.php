@@ -13,6 +13,7 @@ use ItAces\Image;
  */
 class ImageController
 {
+    
     /**
      * 
      * @param \Illuminate\Http\Request $request
@@ -22,32 +23,34 @@ class ImageController
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
     public function resize(Request $request, string $mode, int $width, int $height) {
+        $disk = config('filesystems.default');
+        $rootPath = config("filesystems.disks.{$disk}.root");
+        $rootUrl = config("filesystems.disks.{$disk}.url");
         $src = $request->get('src');
-        
-        if (!Storage::exists($src)) {
-            abort(404);
-        }
         
         if (substr( $src, 0, 1 ) == '/') {
             $src = substr( $src, 1 );
         }
         
-        $dest = Image::cachePath($src, $mode, $width, $height);
+        if (!Storage::exists($src)) {
+            abort(404);
+        }
+
+        $cached = Image::cachePath($src, $mode, $width, $height);
         
-        if (!Storage::exists($dest)) {
-            //dd(public_path($src), public_path($dest));
-            Image::resizeImage(public_path($src), public_path($dest), $width, $height, $mode);
+        if (!Storage::exists($cached)) {
+            Image::resizeImage($rootPath . '/' . $src, $rootPath . '/' . $cached, $width, $height, $mode);
         }
 
         if ($request->hasHeader('HTTP_X_FRONTEND')) {
             $response = response();
-            $response->header('X-Accel-Redirect', '/' . $dest);
-            $response->header('X-Cache-Hash', md5( $dest ));
+            $response->header('X-Accel-Redirect', $rootUrl . '/' . $cached);
+            $response->header('X-Cache-Hash', md5( $cached ));
             
             return $response;
         }
         
-        return response()->redirectTo('/' . $dest);
+        return response()->redirectTo($rootUrl . '/' . $cached);
     }
     
 }

@@ -1,5 +1,4 @@
 <?php
-use ItAces\Image;
 
 if (! function_exists('crop')) {
 
@@ -13,7 +12,7 @@ if (! function_exists('crop')) {
      */
     function crop($path, string $mode, int $width, int $height = 0)
     {
-        return Image::crop($path, $mode, $width, $height);
+        return \ItAces\Image::crop($path, $mode, $width, $height);
     }
 }
 

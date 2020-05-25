@@ -282,7 +282,7 @@ class FieldContainer
                 $inputName => [__('File size too large.')],
             ]);
         }
-        
+
         if ($type == ImageType::class) {
             $path = Uploader::storeImage($uploadedFile, $inputName);
         } else {
@@ -348,12 +348,16 @@ class FieldContainer
             if (!Gate::check('read', Helper::classToUlr($association['targetEntity']))) {
                 continue;
             }
-
-            if (in_array(ImageType::class, class_implements($association['targetEntity']))) {
+            
+            if (in_array(FileType::class, class_implements($association['targetEntity']))) {
+                $isImage = in_array(ImageType::class, class_implements($association['targetEntity']));
+                
                 if ($association['type'] & ClassMetadataInfo::TO_ONE) {
-                    $fields[] = ImageField::getInstance($classMetadata, $association['fieldName'], $entity);
+                    $fields[] = $isImage ? ImageField::getInstance($classMetadata, $association['fieldName'], $entity) :
+                        FileType::getInstance($classMetadata, $association['fieldName'], $entity);
                 } else if ($association['type'] & ClassMetadataInfo::TO_MANY) {
-                    $collectionField = ImageCollectionField::getInstance($classMetadata, $association['fieldName'], $entity);
+                    $collectionField = $isImage ? ImageCollectionField::getInstance($classMetadata, $association['fieldName'], $entity) :
+                        FileCollectionField::getInstance($classMetadata, $association['fieldName'], $entity);
                     
                     if ($this->fetchAllPosibleCollectionValues) {
                         $collectionField->fetchAllValues();
@@ -388,7 +392,7 @@ class FieldContainer
     protected function buildMetadataOfSimpleFields(ClassMetadata $classMetadata, EntityBase $entity = null)
     {
         $fields = [];
-        
+
         foreach ($classMetadata->fieldNames as $fieldName) {
             if (array_search($fieldName, self::INTERNAL_FIELDS) !== false) {
                 continue;

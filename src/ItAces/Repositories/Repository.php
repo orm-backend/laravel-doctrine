@@ -2,8 +2,6 @@
 
 namespace ItAces\Repositories;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
@@ -17,6 +15,7 @@ use ItAces\ORM\DevelopmentException;
 use ItAces\ORM\Orderly;
 use ItAces\ORM\QueryFactory;
 use ItAces\ORM\Entities\EntityBase;
+use ItAces\Utility\Helper;
 use ItAces\View\FieldContainer;
 
 /**
@@ -229,20 +228,21 @@ class Repository
      * ]
      * </code>
      * 
+     * @param string $classUrlName
      * @param array $data
      * @throws \Exception
      */
-    public function saveContainer(array $data)
+    public function saveContainer(array $data, string $classUrlName)
     {
         $storedFiles = [];
         $exception = null;
-        
         $this->em()->beginTransaction();
         
         try {
             $map = FieldContainer::readRequest($data, $storedFiles);
 
             foreach ($map as $className => $data) {
+                $classUrlName = Helper::classToUlr($className);
                 Validator::make($data, $className::getRequestValidationRules())->validate();
                 $this->createOrUpdate($className, $data);
             }
@@ -282,28 +282,37 @@ class Repository
     {
         $alias = lcfirst( (new \ReflectionClass($class))->getShortName() );
         
-        $max = $this->em->createQueryBuilder()
-            ->add('select', "MAX({$alias}.id)")
-            ->from($class, $alias)
-            ->getQuery()
-            ->getSingleScalarResult();
-        
-        $ids = $this->em->createQueryBuilder()
-            ->add('select', 'CEIL(RAND() * :max) AS id')
-            ->from($class, $alias)
-            ->setParameter('max', $max, Types::INTEGER)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getScalarResult();
-        
-        array_walk($ids, function(&$item) {$item = (int) $item['id'];});
-        
         return $this->em->createQueryBuilder()
             ->select($alias)
+            ->addSelect('RAND() as HIDDEN rand')
             ->from($class, $alias)
-            ->where("{$alias}.id IN (:ids)")
-            ->setParameter('ids', $ids, Connection::PARAM_INT_ARRAY)
+            ->orderBy('rand')
+            ->setMaxResults($limit)
             ->getQuery();
+            
+        
+//         $max = $this->em->createQueryBuilder()
+//             ->add('select', "MAX({$alias}.id)")
+//             ->from($class, $alias)
+//             ->getQuery()
+//             ->getSingleScalarResult();
+        
+//         $ids = $this->em->createQueryBuilder()
+//             ->add('select', 'CEIL(RAND() * :max) AS id')
+//             ->from($class, $alias)
+//             ->setParameter('max', $max, Types::INTEGER)
+//             ->setMaxResults($limit)
+//             ->getQuery()
+//             ->getScalarResult();
+//             dd($max);
+//         array_walk($ids, function(&$item) {$item = (int) $item['id'];});
+        
+//         return $this->em->createQueryBuilder()
+//             ->select($alias)
+//             ->from($class, $alias)
+//             ->where("{$alias}.id IN (:ids)")
+//             ->setParameter('ids', $ids, Connection::PARAM_INT_ARRAY)
+//             ->getQuery();
     }
 
     /**

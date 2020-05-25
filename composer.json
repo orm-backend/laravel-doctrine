@@ -15,6 +15,7 @@
     	"laravel/passport": "^8.0",
     	"laravel-doctrine/orm": "^1.5",
     	"laravel-doctrine/extensions": "^1.1",
+    	"beberlei/doctrineextensions": "^1.2",
     	"nesbot/carbon": "^2.0"
     },
     "require-dev": {

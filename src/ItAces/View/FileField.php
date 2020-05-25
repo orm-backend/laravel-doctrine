@@ -43,7 +43,7 @@ class FileField extends ReferenceField
              * @var \ItAces\Types\FileType $file
              */
             $file = $entity->{$fieldName};
-            
+
             if ($file) {
                 $instance->path = $file->getPath();
                 $instance->url = Storage::url($instance->path);

@@ -58,7 +58,7 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
         $data = $request->json()->all();
         $request->validate(Image::getRequestValidationRules());
         $data['name'] = $request->file('image')->getClientOriginalName();
-        $data['path'] = $request->file('image')->store('images/originals');
+        $data['path'] = $request->file('image')->store(config('itaces.upload.img'));
         
         if (!$data['path']) {
             $e = ValidationException::withMessages([
@@ -86,7 +86,7 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
         if ($request->hasFile('image')) {
             $request->validate(Image::getRequestValidationRules());
             $data['name'] = $request->file('image')->getClientOriginalName();
-            $data['path'] = $request->file('image')->store('images/originals');
+            $data['path'] = $request->file('image')->store(config('itaces.upload.img'));
             
             if (!$data['path']) {
                 $e = ValidationException::withMessages([

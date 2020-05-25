@@ -2,7 +2,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::group([
-    'prefix' => 'image',
+    'prefix' => 'img',
     'namespace' => '\ItAces\Controllers'
 ], function () {
     Route::get('/{mode}/{width}/{height}', 'ImageController@resize')->name('image.resize');

@@ -3,6 +3,7 @@
 namespace ItAces\View;
 
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use ItAces\ORM\Entities\EntityBase;
 use ItAces\Types\FileType;
 use ItAces\Types\ImageType;
@@ -75,8 +76,10 @@ class WrappedEntity
         
         if ($entity instanceof ImageType) {
             $this->type = 'image';
+            $this->url = Storage::url($entity->getPath());
         } else if ($entity instanceof FileType) {
             $this->type = 'file';
+            $this->url = Storage::url($entity->getPath());
         } else {
             $this->type = 'common';
         }

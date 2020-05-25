@@ -2,6 +2,7 @@
 
 namespace ItAces\Rules;
 
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Validator;
 use ItAces\Types\FileType;
 
@@ -59,16 +60,19 @@ class PersistentFile
          * @var \ItAces\Types\FileType $file
          */
         $file = $value;
-        $path = public_path($file->getPath());
         
-        if (!file_exists($path)) {
+        if (!Storage::exists($file->getPath())) {
             return false;
         }
         
+        $disk = config('filesystems.default');
+        $rootPath = config("filesystems.disks.{$disk}.root");
+        $path = $rootPath . '/' . $file->getPath();
+        
         if ($mimetypes) {
             $mime = file_mimetype($path);
-            
-            if (array_search($mime, $mimetypes) === false) {
+
+            if (!in_array($mime, $mimetypes)) {
                 return false;
             }
         }
