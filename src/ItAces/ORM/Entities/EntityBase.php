@@ -286,7 +286,12 @@ abstract class EntityBase
         $fields = array_keys($rules);
         
         foreach ($fields as $field) {
-            $method = 'get' . ucfirst($field);
+            $method = 'is' . ucfirst($field);
+            
+            if (!method_exists($this, $method)) {
+                $method = 'get' . ucfirst($field);
+            }
+            
             $attributes[$field] = $this->$method();
         }
         
