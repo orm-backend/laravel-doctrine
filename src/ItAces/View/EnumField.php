@@ -24,11 +24,12 @@ class EnumField extends MetaField
      * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
      * @param string $fieldName
      * @param \ItAces\ORM\Entities\EntityBase $entity
+     * @param int $index
      * @return \ItAces\View\MetaField
      */
-    public static function getInstance(ClassMetadata $classMetadata, string $fieldName, EntityBase $entity = null)
+    public static function getInstance(ClassMetadata $classMetadata, string $fieldName, EntityBase $entity = null, int $index = null)
     {
-        $instance = parent::getInstance($classMetadata, $fieldName);
+        $instance = parent::getInstance($classMetadata, $fieldName, $entity, $index);
         
         if ($entity && array_search($fieldName, FieldContainer::FORBIDDEN_FIELDS) === false) {
             $instance->value = $classMetadata->getFieldValue($entity, $instance->name);

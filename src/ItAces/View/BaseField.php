@@ -25,11 +25,12 @@ class BaseField extends MetaField
      * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
      * @param string $fieldName
      * @param \ItAces\ORM\Entities\EntityBase $entity
+     * @param int $index
      * @return \ItAces\View\MetaField
      */
-    public static function getInstance(ClassMetadata $classMetadata, string $fieldName, EntityBase $entity = null)
+    public static function getInstance(ClassMetadata $classMetadata, string $fieldName, EntityBase $entity = null, int $index = null)
     {
-        $instance = parent::getInstance($classMetadata, $fieldName);
+        $instance = parent::getInstance($classMetadata, $fieldName, $entity, $index);
         
         if ($entity && array_search($fieldName, FieldContainer::FORBIDDEN_FIELDS) === false) {
             $instance->value = $classMetadata->getFieldValue($entity, $instance->name);
@@ -43,9 +44,9 @@ class BaseField extends MetaField
      * {@inheritDoc}
      * @see \ItAces\View\MetaField::__construct()
      */
-    protected function __construct(ClassMetadata $classMetadata, string $fieldName)
+    protected function __construct(ClassMetadata $classMetadata, string $fieldName, int $index = null)
     {
-        parent::__construct($classMetadata, $fieldName);
+        parent::__construct($classMetadata, $fieldName, $index);
         $this->fieldMapping = $classMetadata->getFieldMapping($this->name);
     }
 

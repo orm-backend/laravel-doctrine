@@ -44,4 +44,40 @@ class Helper
         return implode('\\', $result);
     }
     
+    /**
+     *
+     * @param string $classUrlName
+     * @return string
+     */
+    public static function classShortFromUrl(string $classUrlName) : string
+    {
+        $className = self::classFromUlr($classUrlName);
+        
+        return (new \ReflectionClass($className))->getShortName();
+    }
+    
+    /**
+     *
+     * @param string $classUrlName
+     * @return string
+     */
+    public static function aliasFromUrl(string $classUrlName) : string
+    {
+        $className = self::classFromUlr($classUrlName);
+        
+        return self::aliasFromClass($className);
+    }
+    
+    /**
+     *
+     * @param string $classUrlName
+     * @return string
+     */
+    public static function aliasFromClass(string $className) : string
+    {
+        $classShortName = (new \ReflectionClass($className))->getShortName();
+        
+        return lcfirst($classShortName);
+    }
+    
 }

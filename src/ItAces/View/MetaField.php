@@ -97,11 +97,12 @@ abstract class MetaField
      * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
      * @param string $fieldName
      * @param \ItAces\ORM\Entities\EntityBase $entity
+     * @param int $index
      * @return \ItAces\View\MetaField
      */
-    public static function getInstance(ClassMetadata $classMetadata, string $fieldName, EntityBase $entity = null)
+    public static function getInstance(ClassMetadata $classMetadata, string $fieldName, EntityBase $entity = null, int $index = null)
     {
-        $instance = new static($classMetadata, $fieldName);
+        $instance = new static($classMetadata, $fieldName, $index);
         $instance->type = $instance->getHtmlType();
         $instance->textalign = $instance->type == 'number' ? 'right' : 'left';
         $instance->width = $instance->type == 'number' ? 50 : 'auto';
@@ -120,14 +121,24 @@ abstract class MetaField
      * 
      * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
      * @param string $fieldName
+     * @param int $index
      */
-    protected function __construct(ClassMetadata $classMetadata, string $fieldName)
+    protected function __construct(ClassMetadata $classMetadata, string $fieldName, int $index = null)
     {
         $this->name = $fieldName;
         $this->class = $classMetadata->name;
         $this->classUrlName = Helper::classToUlr($this->class);
         $this->aliasname = lcfirst((new \ReflectionClass($this->class))->getShortName()) .'.'. $this->name;
-        $this->fullname = Helper::classToUlr($this->class) .'['. $this->name . ']';
+        $this->fullname = Helper::classToUlr($this->class);
+        
+        /**
+         * A form can contain several objects of the same class
+         */
+        if ($index !== null) {
+            $this->fullname .= '[' . $index . ']';
+        }
+        
+        $this->fullname .= '['. $this->name . ']';
         $this->title = $this->name == 'id' ? 'ID' : __(Str::pluralCamelWords( ucfirst($this->name), 1));
         $this->autohide = $this->name != 'id' && !$this->name != 'name' && !$this->name != 'code';
         

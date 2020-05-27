@@ -16,6 +16,7 @@ use ItAces\ORM\Orderly;
 use ItAces\ORM\QueryFactory;
 use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
+use ItAces\View\EntityContainer;
 use ItAces\View\FieldContainer;
 
 /**
@@ -228,11 +229,11 @@ class Repository
      * ]
      * </code>
      * 
-     * @param string $classUrlName
      * @param array $data
+     * @param string $classUrlName
      * @throws \Exception
      */
-    public function saveContainer(array $data, string $classUrlName)
+    public function saveFieldContainer(array $data, string $classUrlName)
     {
         $storedFiles = [];
         $exception = null;
@@ -269,6 +270,83 @@ class Repository
             }
             
             throw $exception;
+        }
+    }
+    
+    /**
+     * Saving request data to a database. To update entities, it is necessary that the 'id'
+     * field and its value be present in the data. The data format should look like this:
+     * <code>
+     * [
+     *     'vendor-package-foo'[0] => [
+     *         'firstField' => value,
+     *         'nextField' => value
+     *     ],
+     *     'vendor-package-foo'[1] => [
+     *         'firstField' => value,
+     *         'nextField' => value
+     *     ],
+     *     'vendor-package-bar'[0] => [
+     *         'firstField' => value,
+     *         'nextField' => value
+     *     ]
+     * ]
+     * </code>
+     *
+     * @param array $data
+     * @param array $delete
+     * @throws \Exception
+     */
+    public function saveEntityContainer(array $data, array $delete = [])
+    {
+        $classUrlName = null;
+        $storedFiles = [];
+        $this->em()->beginTransaction();
+
+        try {
+            $map = EntityContainer::readRequest($data, $storedFiles);
+
+            foreach ($map as $className => $data) {
+                $classUrlName = Helper::classToUlr($className);
+                
+                foreach ($data as $index => $value) {
+                    try {
+                        Validator::make($value, $className::getRequestValidationRules())->validate();
+                        $this->createOrUpdate($className, $value);
+                        /**
+                         * FIXME:
+                         * I am forced to flush the session at this place, because otherwise I do not see
+                         * the possibility of correctly generating an error message with the desired index.
+                         */
+                        $this->em()->flush();
+                    } catch (ValidationException $e) {
+                        $messages = EntityContainer::exceptionToMessages($e, $classUrlName, $index);
+                        throw ValidationException::withMessages($messages);
+                    }
+                }
+            }
+            
+            foreach ($delete as $className => $ids) {
+                foreach ($ids as $id) {
+                    $this->delete($className, $id);
+                }
+            }
+
+            $this->em()->flush();
+            $this->em()->commit();
+        } catch (\Exception $e) {
+            $this->em()->rollback();
+
+            foreach ($storedFiles as $storedFile) {
+                /**
+                 *
+                 * @var \ItAces\Types\FileType $file
+                 */
+                $file = $storedFile;
+                Storage::delete($file->getPath());
+            }
+            
+            throw $e;
         }
     }
     
