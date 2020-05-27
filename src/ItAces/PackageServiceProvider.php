@@ -57,14 +57,6 @@ class PackageServiceProvider extends ServiceProvider
         Carbon::serializeUsing(function ($carbon) {
             return $carbon->format('U');
         });
-
-        if (config('app.debug', false)) {
-            Event::listen('Illuminate\Database\Events\QueryExecuted', function ($query) {
-                if (strpos($query->sql, 'oauth') === false) {
-                    Log::info($query->sql, $query->bindings);
-                }
-            });
-        }
         
         Validator::extend('arrayofinteger', ArrayOfInteger::class . '@validate');
         Validator::extend('persistentcollection', PersistentCollection::class . '@validate');
