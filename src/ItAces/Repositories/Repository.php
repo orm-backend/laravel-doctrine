@@ -18,6 +18,7 @@ use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
 use ItAces\View\EntityContainer;
 use ItAces\View\FieldContainer;
+use Doctrine\Common\Cache\ArrayCache;
 
 /**
  * This repository does not join any data from related entities.
@@ -532,8 +533,7 @@ class Repository
          * Turn on the 2nd cache only if there are no filtering options.
          */
         if ($query->getAST()->whereClause) {
-            // app_model_eventtile timestamp_cache_region query_cache_region
-            $query->enableResultCache(config('itaces.caches.result_ttl'));
+            $query->setResultCacheDriver(new ArrayCache());
         } else if ($this->em->getConfiguration()->isSecondLevelCacheEnabled()) {
             $query->setLifetime( $this->em->getConfiguration()->getSecondLevelCacheConfiguration()->getRegionsConfiguration()->getDefaultLifetime() );
             $query->setCacheable(true);
