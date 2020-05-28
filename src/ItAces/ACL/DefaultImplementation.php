@@ -4,6 +4,7 @@ namespace ItAces\ACL;
 use App\Model\Role;
 use App\Model\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
 use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
@@ -429,17 +430,26 @@ class DefaultImplementation implements AccessControl
         }
         
         if ($permissions === config('itaces.perms.record.read')) {
-            $alias = $alias ? $alias : lcfirst( (new \ReflectionClass($class))->getShortName() );
+            $reflectionClass = new \ReflectionClass($class);
+            $alias = $alias ? $alias : lcfirst( $reflectionClass->getShortName() );
             
             if (!array_key_exists('filter', $parameters)) {
                 $parameters['filter'] = [];
             }
             
-            $parameters['filter'][] = [
-                $alias . '.createdBy.id',
-                'eq',
-                Auth::id()
-            ];
+            if ($reflectionClass->implementsInterface(Authenticatable::class)) {
+                $parameters['filter'][] = [
+                    $alias . '.id',
+                    'eq',
+                    Auth::id()
+                ];
+            } else {
+                $parameters['filter'][] = [
+                    $alias . '.createdBy.id',
+                    'eq',
+                    Auth::id()
+                ];
+            }
         }
 
         return $parameters;
