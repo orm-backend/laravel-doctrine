@@ -24,7 +24,7 @@ class ApiController
     public function __construct()
     {
         $this->adapters = config('itaces.adapters');
-        $this->jsonCRUDController = new JsonCRUDController();
+        $this->jsonCRUDController = new JsonCRUDController(true);
     }
     
     /**

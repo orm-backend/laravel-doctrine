@@ -28,6 +28,13 @@ use Doctrine\Common\Cache\ArrayCache;
  */
 class Repository
 {
+    
+    /**
+     * 
+     * @var boolean
+     */
+    protected $cacheable;
+    
     /**
      * 
      * @var \Doctrine\ORM\EntityManager
@@ -47,7 +54,8 @@ class Repository
     protected $orderly;
     
 
-    public function __construct() {
+    public function __construct(bool $cacheable = false) {
+        $this->cacheable = $cacheable;
         $this->em = app('em');
         $this->acl = app('acl');
         $this->orderly = new Orderly;
@@ -527,17 +535,35 @@ class Repository
         }
     }
 
-    protected function enableCaches(Query &$query, string $class)
+    protected function enableCaches(Query &$query, string $className)
     {
-        /**
-         * Turn on the 2nd cache only if there are no filtering options.
-         */
-        if ($query->getAST()->whereClause) {
-            $query->setResultCacheDriver(new ArrayCache());
-        } else if ($this->em->getConfiguration()->isSecondLevelCacheEnabled()) {
-            $query->setLifetime( $this->em->getConfiguration()->getSecondLevelCacheConfiguration()->getRegionsConfiguration()->getDefaultLifetime() );
-            $query->setCacheable(true);
+        if ($this->cacheable) {
+            /**
+             * Turn on the 2nd cache only if there are no filtering options.
+             */
+            if ($query->getAST()->whereClause) {
+                $query->setResultCacheDriver(new ArrayCache());
+            } else if ($this->em->getConfiguration()->isSecondLevelCacheEnabled() && $this->em->getClassMetadata($className)->cache) {
+                $query->setLifetime( $this->em->getConfiguration()->getSecondLevelCacheConfiguration()->getRegionsConfiguration()->getDefaultLifetime() );
+                $query->setCacheable(true);
+            }
         }
     }
+    
+    /**
+     * @return boolean
+     */
+    public function isCacheable()
+    {
+        return $this->cacheable;
+    }
 
+    /**
+     * @param boolean $cacheable
+     */
+    public function setCacheable(bool $cacheable)
+    {
+        $this->cacheable = $cacheable;
+    }
+    
 }

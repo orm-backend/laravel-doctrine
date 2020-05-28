@@ -26,10 +26,10 @@ class JsonCRUDController extends WebController
      */
     protected $withJoins;
     
-    public function __construct()
+    public function __construct(bool $cacheable = false)
     {
         parent::__construct();
-        $this->withJoins = new WithJoinsRepository(true);
+        $this->withJoins = new WithJoinsRepository(true, $cacheable);
     }
     
     /**

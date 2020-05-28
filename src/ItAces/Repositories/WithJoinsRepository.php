@@ -23,9 +23,10 @@ class WithJoinsRepository extends Repository
     /**
      * 
      * @param bool $joinCollections
+     * @param bool $cacheable
      */
-    public function __construct(bool $joinCollections = false) {
-        parent::__construct();
+    public function __construct(bool $joinCollections = false, bool $cacheable = false) {
+        parent::__construct($cacheable);
         $this->joinCollections = $joinCollections;
     }
     
