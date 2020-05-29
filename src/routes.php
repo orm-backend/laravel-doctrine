@@ -14,7 +14,7 @@ Route::group([
     'middleware' => [
         'throttle:60,1',
         'bindings',
-        //'auth:api'
+        'auth:api'
     ]
 ], function () {
     Route::group([
