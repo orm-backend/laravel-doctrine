@@ -13,6 +13,7 @@ use Doctrine\DBAL\Types\Types;
  */
 class Orderly
 {
+    const DEFAULT_STRING_LENGTH = 255;
     
     /**
      * 
@@ -27,12 +28,15 @@ class Orderly
         }
 
         $value = filter_var(trim($value), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_AMP);
-        //dd($value);
-        if ($fieldMetadata['type'] == 'string' && $fieldMetadata['length']) {
+
+        if (!array_key_exists('length', $fieldMetadata) || !$fieldMetadata['length']) {
+            $fieldMetadata['length'] = self::DEFAULT_STRING_LENGTH;
+        }
+        
+        if ($fieldMetadata['type'] == Types::STRING) {
             $value = mb_substr($value, 0, $fieldMetadata['length']);
         }
 
-        //dd( \Doctrine\DBAL\Types\Type::getTypesMap());
         switch ($fieldMetadata['type']) {
             case Types::BIGINT:
             case Types::INTEGER:

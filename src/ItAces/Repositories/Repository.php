@@ -16,8 +16,8 @@ use ItAces\ORM\Orderly;
 use ItAces\ORM\QueryFactory;
 use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
-use ItAces\View\EntityContainer;
-use ItAces\View\FieldContainer;
+use ItAces\Web\Fields\EntityContainer;
+use ItAces\Web\Fields\FieldContainer;
 use Doctrine\Common\Cache\ArrayCache;
 
 /**
@@ -154,12 +154,12 @@ class Repository
     /**
      *
      * @param string $class
-     * @param int $id
+     * @param mixed $id
      * @return \ItAces\ORM\Entities\EntityBase
      */
-    public function findOrFail(string $class, int $id) : EntityBase
+    public function findOrFail(string $class, $id) : EntityBase
     {
-        if ($id < 1) {
+        if (!$id || (is_numeric($id) && (int) $id < 1)) {
             abort(400);
         }
         

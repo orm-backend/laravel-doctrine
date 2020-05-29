@@ -59,11 +59,11 @@ class DefaultImplementation implements AccessControl
      * 
      * @param string $classUrlName
      * @param int $userId
-     * @return int
+     * @return int|null
      */
-    protected function getEntityPermissions(string $classUrlName, int $userId = null) : int
+    protected function getEntityPermissions(string $classUrlName, int $userId = null)
     {
-        return 0;
+        return null;
     }
     
     /**
@@ -86,8 +86,8 @@ class DefaultImplementation implements AccessControl
     {
         
         $perms = $this->getEntityPermissions($classUrlName, $userId);
-        
-        if (!$perms) {
+
+        if ($perms === null) {
             $perms = $this->getDefaultPermissions($userId);
         }
         
