@@ -18,6 +18,12 @@
 		<unique-constraints>
 			<unique-constraint name="role_code_unique" columns="code" />
 		</unique-constraints>
+		<id name="id" type="integer" column="id">
+			<options>
+				<option name="unsigned">1</option>
+			</options>
+			<generator strategy="IDENTITY" />
+		</id>
 		<field name="code" type="string" column="code" length="50" nullable="false">
 			<options>
 				<option name="fixed" />

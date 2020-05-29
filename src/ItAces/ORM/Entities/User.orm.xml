@@ -17,6 +17,12 @@
 		<unique-constraints>
 			<unique-constraint name="user_email_unique" columns="email" />
 		</unique-constraints>
+		<id name="id" type="integer" column="id">
+			<options>
+				<option name="unsigned">1</option>
+			</options>
+			<generator strategy="IDENTITY" />
+		</id>
 		<field name="email" type="string" column="email" length="255" nullable="false">
 			<options>
 				<option name="fixed" />

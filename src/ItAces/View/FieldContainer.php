@@ -21,7 +21,7 @@ use ItAces\Utility\Helper;
  */
 class FieldContainer
 {
-    const INTERNAL_FIELDS = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedBy'];
+    const INTERNAL_FIELDS = ['createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedBy'];
     
     const FORBIDDEN_FIELDS = ['password', 'rememberToken'];
     
@@ -104,7 +104,7 @@ class FieldContainer
      */
     public function buildMetaFields(ClassMetadata $classMetadata)
     {
-        $this->fields[] = BaseField::getInstance($classMetadata, 'id');
+        $this->fields[] = BaseField::getInstance($classMetadata, $classMetadata->getSingleIdentifierFieldName());
         $this->fields = array_merge($this->fields, $this->buildMetadataOfSimpleFields($classMetadata));
         $this->fields = array_merge($this->fields, $this->buildMetadataOfFileFields($classMetadata));
         $this->fields = array_merge($this->fields, $this->buildMetadataOfAssociationFields($classMetadata));
@@ -219,8 +219,9 @@ class FieldContainer
         foreach ($classMetadata->associationMappings as $association) {
             $targetEntity = $association['targetEntity'];
             $fieldName = $association['fieldName'];
+            $internalFields = array_merge(self::INTERNAL_FIELDS, [$classMetadata->getSingleIdentifierColumnName()]);
             
-            if (in_array($fieldName, self::INTERNAL_FIELDS)) {
+            if (in_array($fieldName, $internalFields)) {
                 continue;
             }
             
@@ -258,7 +259,7 @@ class FieldContainer
         }
 
         foreach ($classMetadata->fieldNames as $fieldName) {
-            if ($fieldName != $classMetadata->identifier[0] && in_array($fieldName, self::INTERNAL_FIELDS)) {
+            if ($fieldName != $classMetadata->identifier[0] && in_array($fieldName, $internalFields)) {
                 continue;
             }
             
@@ -322,7 +323,7 @@ class FieldContainer
      */
     protected function wrapEntity(ClassMetadata $classMetadata, EntityBase $entity, int $index = null) : WrappedEntity
     {
-        $fields = [BaseField::getInstance($classMetadata, 'id', $entity, $index)];
+        $fields = [BaseField::getInstance($classMetadata, $classMetadata->getSingleIdentifierFieldName(), $entity, $index)];
         $fields = array_merge($fields, $this->buildMetadataOfSimpleFields($classMetadata, $entity, $index));
         $fields = array_merge($fields, $this->buildMetadataOfFileFields($classMetadata, $entity, $index));
         $fields = array_merge($fields, $this->buildMetadataOfAssociationFields($classMetadata, $entity, $index));
@@ -402,9 +403,10 @@ class FieldContainer
     protected function buildMetadataOfSimpleFields(ClassMetadata $classMetadata, EntityBase $entity = null, int $index = null)
     {
         $fields = [];
+        $internalFields = array_merge(self::INTERNAL_FIELDS, [$classMetadata->getSingleIdentifierColumnName()]);
 
         foreach ($classMetadata->fieldNames as $fieldName) {
-            if (array_search($fieldName, self::INTERNAL_FIELDS) !== false) {
+            if (in_array($fieldName, $internalFields)) {
                 continue;
             }
             
@@ -433,9 +435,10 @@ class FieldContainer
     protected function buildMetadataOfAssociationFields(ClassMetadata $classMetadata, EntityBase $entity = null, int $index = null)
     {
         $fields = [];
+        $internalFields = array_merge(self::INTERNAL_FIELDS, [$classMetadata->getSingleIdentifierColumnName()]);
         
         foreach ($classMetadata->associationMappings as $association) {
-            if (array_search($association['fieldName'], self::INTERNAL_FIELDS) !== false ||
+            if (in_array($association['fieldName'], $internalFields) ||
                 in_array(FileType::class, class_implements($association['targetEntity']))) {
                 continue;
             }
@@ -478,12 +481,8 @@ class FieldContainer
     protected function buildMetadataOfInternalFields(ClassMetadata $classMetadata, EntityBase $entity = null, int $index = null)
     {
         $fields = [];
-        
+
         foreach (self::INTERNAL_FIELDS as $fieldName) {
-            if ($fieldName == 'id') {
-                continue;
-            }
-            
             if (array_search($fieldName, $classMetadata->fieldNames) !== false) {
                 $fields[] = BaseField::getInstance($classMetadata, $fieldName, $entity, $index);
             } else if ($classMetadata->hasAssociation($fieldName)) {

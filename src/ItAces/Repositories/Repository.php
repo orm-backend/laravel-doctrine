@@ -189,12 +189,14 @@ class Repository
      */
     public function createOrUpdate(string $class, array $data, int $id = null) : EntityBase
     {
-        if ($id === null && isset($data['id'])) {
-            $id = (int) $data['id'];
+        $primaryName = $class::getIdentifierName();
+        
+        if ($id === null && isset($data[$primaryName])) {
+            $id = (int) $data[$primaryName];
         }
 
-        if (array_key_exists('id', $data)) {
-            unset($data['id']); // Prevents setting ID value
+        if (array_key_exists($primaryName, $data)) {
+            unset($data[$primaryName]); // Prevents setting ID value
         }
 
         if ($id) {
@@ -219,7 +221,7 @@ class Repository
     }
     
     /**
-     * Saving request data to a database. To update entities, it is necessary that the 'id'
+     * Saving request data to a database. To update entities, it is necessary that the identifier
      * field and its value be present in the data. The data format should look like this:
      * <code>
      * [
@@ -283,7 +285,7 @@ class Repository
     }
     
     /**
-     * Saving request data to a database. To update entities, it is necessary that the 'id'
+     * Saving request data to a database. To update entities, it is necessary that the identifier
      * field and its value be present in the data. The data format should look like this:
      * <code>
      * [
@@ -376,30 +378,6 @@ class Repository
             ->orderBy('rand')
             ->setMaxResults($limit)
             ->getQuery();
-            
-        
-//         $max = $this->em->createQueryBuilder()
-//             ->add('select', "MAX({$alias}.id)")
-//             ->from($class, $alias)
-//             ->getQuery()
-//             ->getSingleScalarResult();
-        
-//         $ids = $this->em->createQueryBuilder()
-//             ->add('select', 'CEIL(RAND() * :max) AS id')
-//             ->from($class, $alias)
-//             ->setParameter('max', $max, Types::INTEGER)
-//             ->setMaxResults($limit)
-//             ->getQuery()
-//             ->getScalarResult();
-//             dd($max);
-//         array_walk($ids, function(&$item) {$item = (int) $item['id'];});
-        
-//         return $this->em->createQueryBuilder()
-//             ->select($alias)
-//             ->from($class, $alias)
-//             ->where("{$alias}.id IN (:ids)")
-//             ->setParameter('ids', $ids, Connection::PARAM_INT_ARRAY)
-//             ->getQuery();
     }
 
     /**
@@ -415,7 +393,7 @@ class Repository
         
         return $this->getQuery($class, [
             'filter' => [
-                [$alias.'.id', 'in', $ids]
+                [$alias.'.'.$class::getIdentifierName(), 'in', $ids]
             ]
         ], $alias)->getResult();
     }

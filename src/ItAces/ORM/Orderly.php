@@ -34,6 +34,7 @@ class Orderly
 
         //dd( \Doctrine\DBAL\Types\Type::getTypesMap());
         switch ($fieldMetadata['type']) {
+            case Types::BIGINT:
             case Types::INTEGER:
             case Types::SMALLINT:
                 $value = filter_var($value, FILTER_SANITIZE_NUMBER_INT);
@@ -97,6 +98,7 @@ class Orderly
         $connectionType = Connection::PARAM_INT_ARRAY;
         
         switch ($fieldType) {
+            case Types::BIGINT:
             case Types::INTEGER:
             case Types::SMALLINT:
                 break;

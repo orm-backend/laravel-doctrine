@@ -8,6 +8,11 @@ namespace ItAces\ORM\Entities;
 abstract class Role extends \ItAces\ORM\Entities\EntityBase
 {
     /**
+     * @var int
+     */
+    protected $id;
+    
+    /**
      * @var string
      */
     protected $code;

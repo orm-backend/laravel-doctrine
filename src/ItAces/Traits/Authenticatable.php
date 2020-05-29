@@ -16,7 +16,7 @@ trait Authenticatable
      */
     public function getAuthIdentifierName()
     {
-        return 'id';
+        return self::getIdentifierName();
     }
     
     /**
@@ -36,7 +36,7 @@ trait Authenticatable
      */
     public function getAuthIdentifier()
     {
-        return $this->getId();
+        return $this->getPrimary();
     }
     
     /**

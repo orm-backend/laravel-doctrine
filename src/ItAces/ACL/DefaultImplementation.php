@@ -439,13 +439,13 @@ class DefaultImplementation implements AccessControl
             
             if ($reflectionClass->implementsInterface(Authenticatable::class)) {
                 $parameters['filter'][] = [
-                    $alias . '.id',
+                    $alias . '.' . $class::getIdentifierName(),
                     'eq',
                     Auth::id()
                 ];
             } else {
                 $parameters['filter'][] = [
-                    $alias . '.createdBy.id',
+                    $alias . '.createdBy.' . $class::getIdentifierName(),
                     'eq',
                     Auth::id()
                 ];

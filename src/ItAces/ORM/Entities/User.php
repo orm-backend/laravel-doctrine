@@ -6,6 +6,11 @@ abstract class User extends \ItAces\ORM\Entities\EntityBase
 {
 
     /**
+     * @var int
+     */
+    protected $id;
+    
+    /**
      * @var string
      */
     protected $email;

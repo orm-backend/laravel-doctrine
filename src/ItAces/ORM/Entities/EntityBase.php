@@ -3,6 +3,7 @@
 namespace ItAces\ORM\Entities;
 
 use Doctrine\Common\Persistence\Event\LifecycleEventArgs;
+use Doctrine\DBAL\Types\Types;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -12,11 +13,38 @@ use ItAces\Types\FileType;
 
 abstract class EntityBase
 {
+    private static $identifiers = [];
 
-    /**
-     * @var int
-     */
-    protected $id;
+    static public function getIdentifier() {
+        if (!array_key_exists(static::class, self::$identifiers)) {
+            /**
+             *
+             * @var \Doctrine\ORM\EntityManager $em
+             */
+            $em = app('em');
+            $classMetadata = $em->getClassMetadata(static::class);
+            $fieldName = $classMetadata->getSingleIdentifierFieldName();
+            $fieldMapping = $classMetadata->getFieldMapping($fieldName);
+            self::$identifiers[static::class] = [
+                'name' => $fieldName,
+                'type' => $fieldMapping['type']
+            ];
+        }
+
+        return self::$identifiers[static::class];
+    }
+    
+    static public function getIdentifierName() {
+        $identifier = self::getIdentifier();
+        
+        return $identifier['name'];
+    }
+    
+    static public function getIdentifierType() {
+        $identifier = self::getIdentifier();
+
+        return $identifier['type'];
+    }
     
     /**
      * @var \Carbon\Carbon
@@ -62,12 +90,38 @@ abstract class EntityBase
     
     /**
      * Get id.
-     *
-     * @return int
+     * 
+     * @deprecated
+     * @return mixed
      */
     public function getId()
     {
-        return $this->id;
+        return $this->getPrimary();
+    }
+    
+    public function getPrimary()
+    {
+        $identifier = self::getIdentifier();
+        $value = $this->{$identifier['name']};
+        
+        if ($this->{$identifier['name']} !== null) {
+            switch ($identifier['type']) {
+                case Types::BIGINT:
+                case Types::INTEGER:
+                case Types::SMALLINT:
+                    $value = (int) $value;
+                    break;
+                case Types::FLOAT:
+                case Types::DECIMAL:
+                    $value = (float) $value;
+                    break;
+                case Types::BOOLEAN:
+                    $value = (boolean) $value;
+                    break;
+            }
+        }
+        
+        return $value;
     }
     
     /**
