@@ -13,6 +13,7 @@ use ItAces\DBAL\Types\CarbonDate;
 use ItAces\DBAL\Types\CarbonDateTime;
 use ItAces\Filters\SoftDeleteFilter;
 use ItAces\Listener\DoctrineListener;
+use ItAces\ORM\DoctrineServiceProvider;
 use ItAces\ORM\NamingStrategy;
 use ItAces\ORM\QuoteStrategy;
 use ItAces\Rules\ArrayOfInteger;
@@ -106,15 +107,8 @@ class PackageServiceProvider extends ServiceProvider
         $this->addType(Types::DATETIME_MUTABLE, CarbonDateTime::class);
         $this->addType(Types::DATETIMETZ_MUTABLE, CarbonDateTime::class);
         
-        $this->app->bind(
-            AccessControl::class,
-            config('itaces.acl')
-        );
-        
-        $this->app->singleton('acl', function($app) {
-            $class = config('itaces.acl');
-            return new $class;
-        });
+        $this->app->singleton(AccessControl::class, config('itaces.acl'));
+        $this->app->alias(AccessControl::class, 'acl');
     }
     
     /**
