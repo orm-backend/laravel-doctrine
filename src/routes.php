@@ -1,11 +1,14 @@
 <?php
 use Illuminate\Support\Facades\Route;
 
+Route::pattern('model', '[a-z_\-]+');
+
 Route::group([
     'prefix' => 'img',
     'namespace' => '\ItAces\Controllers'
 ], function () {
-    Route::get('/{mode}/{width}/{height}', 'ImageController@resize')->name('image.resize');
+    Route::get('/{mode}/{width}/{height}', 'ImageController@resize')->name('image.resize')
+        ->where(['mode' => '(zoom|center|simple|feel)', 'width' => '[0-9]+', 'height' => '[0-9]+']);
 });
 
 Route::group([
