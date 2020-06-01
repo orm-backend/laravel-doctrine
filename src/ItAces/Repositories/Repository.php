@@ -254,7 +254,7 @@ class Repository
             $map = FieldContainer::readRequest($data, $storedFiles);
 
             foreach ($map as $className => $data) {
-                $classUrlName = Helper::classToUlr($className);
+                $classUrlName = Helper::classToUrl($className);
                 Validator::make($data, $className::getRequestValidationRules())->validate();
                 $this->createOrUpdate($className, $data);
             }
@@ -318,7 +318,7 @@ class Repository
             $map = EntityContainer::readRequest($data, $storedFiles);
 
             foreach ($map as $className => $data) {
-                $classUrlName = Helper::classToUlr($className);
+                $classUrlName = Helper::classToUrl($className);
                 
                 foreach ($data as $index => $value) {
                     try {

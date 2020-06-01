@@ -15,7 +15,7 @@ class Helper
      * @param string $className
      * @return string
      */
-    public static function classToUlr(string $className) : string
+    public static function classToUrl(string $className) : string
     {
         $result = [];
         $pieces = explode('\\', $className);

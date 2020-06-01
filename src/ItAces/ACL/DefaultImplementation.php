@@ -299,7 +299,7 @@ class DefaultImplementation implements AccessControl
     public function isReadingAllowed(?EntityBase $user, EntityBase $entity) : bool
     {
         $userId = $user ? $user->getId() : null;
-        $classUrlName = Helper::classToUlr(get_class($entity));
+        $classUrlName = Helper::classToUrl(get_class($entity));
         $permissions = $this->getReadAccess($classUrlName, $userId);
         
         if (!$permissions) {
@@ -329,7 +329,7 @@ class DefaultImplementation implements AccessControl
     public function isUpdatingAllowed(?EntityBase $user, EntityBase $entity) : bool
     {
         $userId = $user ? $user->getId() : null;
-        $classUrlName = Helper::classToUlr(get_class($entity));
+        $classUrlName = Helper::classToUrl(get_class($entity));
         $permissions = $this->getUpdateAccess($classUrlName, $userId);
 
         if (!$permissions) {
@@ -359,7 +359,7 @@ class DefaultImplementation implements AccessControl
     public function isDeletingAllowed(?EntityBase $user, EntityBase $entity) : bool
     {
         $userId = $user ? $user->getId() : null;
-        $classUrlName = Helper::classToUlr(get_class($entity));
+        $classUrlName = Helper::classToUrl(get_class($entity));
         $permissions = $this->getDeleteAccess($classUrlName, $userId);
         
         if (!$permissions) {
@@ -389,7 +389,7 @@ class DefaultImplementation implements AccessControl
     public function isRestoringAllowed(?EntityBase $user, EntityBase $entity) : bool
     {
         $userId = $user ? $user->getId() : null;
-        $classUrlName = Helper::classToUlr(get_class($entity));
+        $classUrlName = Helper::classToUrl(get_class($entity));
         $permissions = $this->getRestoreAccess($classUrlName, $userId);
         
         if (!$permissions) {
@@ -422,7 +422,7 @@ class DefaultImplementation implements AccessControl
             return $parameters;
         }
         
-        $classUrlName = Helper::classToUlr($class);
+        $classUrlName = Helper::classToUrl($class);
         $permissions = $this->getReadAccess($classUrlName, auth()->id());
 
         if (!$permissions) {

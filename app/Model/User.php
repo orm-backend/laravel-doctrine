@@ -7,10 +7,10 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use ItAces\SoftDeleteable;
-use ItAces\UnderAdminControl;
+use ItAces\Publishable;
 
 class User extends \ItAces\ORM\Entities\User
-implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, SoftDeleteable, UnderAdminControl
+implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, SoftDeleteable, Publishable
 {
     use \Illuminate\Auth\Passwords\CanResetPassword;
     use \Illuminate\Foundation\Auth\Access\Authorizable;

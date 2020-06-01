@@ -13,7 +13,6 @@ use ItAces\DBAL\Types\CarbonDate;
 use ItAces\DBAL\Types\CarbonDateTime;
 use ItAces\Filters\SoftDeleteFilter;
 use ItAces\Listener\DoctrineListener;
-use ItAces\ORM\DoctrineServiceProvider;
 use ItAces\ORM\NamingStrategy;
 use ItAces\ORM\QuoteStrategy;
 use ItAces\Rules\ArrayOfInteger;

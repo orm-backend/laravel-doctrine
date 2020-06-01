@@ -2,7 +2,6 @@
 
 namespace ItAces\Adapters;
 
-use App\Model\Image;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use ItAces\Controllers\ApiControllerAdapter;
@@ -10,6 +9,7 @@ use ItAces\Controllers\WebController;
 use ItAces\Json\JsonCollectionSerializer;
 use ItAces\Json\JsonSerializer;
 use ItAces\Repositories\WithJoinsRepository;
+use ItAces\Utility\Helper;
 
 class ImageAdapter extends WebController implements ApiControllerAdapter
 {
@@ -29,9 +29,10 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
      * {@inheritDoc}
      * @see \ItAces\Controllers\ApiControllerAdapter::search()
      */
-    public function search(Request $request)
+    public function search(Request $request, string $classUrlName)
     {
-        $paginator = $this->cursor($this->repository->createQuery(Image::class))->appends($request->all());
+        $className = Helper::classFromUlr($classUrlName);
+        $paginator = $this->cursor($this->repository->createQuery($className))->appends($request->all());
         
         return response()->json( new JsonCollectionSerializer($this->repository->em(), $paginator, $this->additional), 200);
     }
@@ -41,9 +42,10 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
      * {@inheritDoc}
      * @see \ItAces\Controllers\ApiControllerAdapter::read()
      */
-    public function read(Request $request, int $id)
+    public function read(Request $request, string $classUrlName, int $id)
     {
-        $instance = $this->repository->findOrFail(Image::class, $id);
+        $className = Helper::classFromUlr($classUrlName);
+        $instance = $this->repository->findOrFail($className, $id);
         
         return response()->json( new JsonSerializer($this->repository->em(), $instance, $this->additional), 200);
     }
@@ -53,10 +55,11 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
      * {@inheritDoc}
      * @see \ItAces\Controllers\ApiControllerAdapter::create()
      */
-    public function create(Request $request)
+    public function create(Request $request, string $classUrlName)
     {
+        $className = Helper::classFromUlr($classUrlName);
         $data = $request->json()->all();
-        $request->validate(Image::getRequestValidationRules());
+        $request->validate($className::getRequestValidationRules());
         $data['name'] = $request->file('image')->getClientOriginalName();
         $data['path'] = $request->file('image')->store(config('itaces.upload.img'));
         
@@ -68,7 +71,7 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
             throw $e;
         }
         
-        $instance = $this->repository->createOrUpdate(Image::class, $data);
+        $instance = $this->repository->createOrUpdate($className, $data);
         $this->repository->em()->flush();
         
         return response()->json( new JsonSerializer($this->repository->em(), $instance, $this->additional), 201);
@@ -79,12 +82,13 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
      * {@inheritDoc}
      * @see \ItAces\Controllers\ApiControllerAdapter::update()
      */
-    public function update(Request $request, int $id)
+    public function update(Request $request, string $classUrlName, int $id)
     {
+        $className = Helper::classFromUlr($classUrlName);
         $data = $request->json()->all();
         
         if ($request->hasFile('image')) {
-            $request->validate(Image::getRequestValidationRules());
+            $request->validate($className::getRequestValidationRules());
             $data['name'] = $request->file('image')->getClientOriginalName();
             $data['path'] = $request->file('image')->store(config('itaces.upload.img'));
             
@@ -97,7 +101,7 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
             }
         }
         
-        $instance = $this->repository->createOrUpdate(Image::class, $data, $id);
+        $instance = $this->repository->createOrUpdate($className, $data, $id);
         $this->repository->em()->flush();
         
         return response()->json( new JsonSerializer($this->repository->em(), $instance, $this->additional), 200);
@@ -108,7 +112,7 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
      * {@inheritDoc}
      * @see \ItAces\Controllers\ApiControllerAdapter::delete()
      */
-    public function delete(Request $request, int $id)
+    public function delete(Request $request, string $classUrlName, int $id)
     {
         return null;
     }
