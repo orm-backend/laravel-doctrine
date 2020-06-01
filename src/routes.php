@@ -12,8 +12,7 @@ Route::group([
     'prefix' => 'api',
     'namespace' => '\ItAces\Controllers',
     'middleware' => [
-        'throttle:60,1',
-        'bindings',
+        'api',
         'auth:api'
     ]
 ], function () {

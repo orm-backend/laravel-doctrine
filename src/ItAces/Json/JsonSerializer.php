@@ -67,27 +67,27 @@ class JsonSerializer implements JsonSerializable
         $object = new \stdClass;
         $className = get_class($entity);
         $reflectionClass = new \ReflectionClass($className);
-        $propertyHidden = $reflectionClass->hasProperty('hidden') ? $reflectionClass->getProperty('hidden') : null;
-        $isHiddens = $propertyHidden && $propertyHidden->isStatic() && $propertyHidden->isPublic() && is_array($className::$hidden);
+        $additional = array_merge($additional, $className::$additional ?? []);
+        $hidden = $className::$hidden ?? [];
         
         foreach ($classMetadata->fieldMappings as $fieldMapping) {
             $fieldName = $fieldMapping['fieldName'];
             
-            if ($isHiddens && array_search($fieldName, $className::$hidden) !== false) {
+            if (in_array($fieldName, $hidden)) {
                 continue;
             }
             
             $object->{$fieldName} = $classMetadata->getFieldValue($entity, $fieldName);
         }
         
-        foreach ($additional as $fieldName) {
-            $method = $reflectionClass->getMethod($fieldName);
+        foreach ($additional as $methodName) {
+            $method = $reflectionClass->getMethod($methodName);
             
             if (!$method) {
-                throw new DevelopmentException("No such method '{$fieldName}' on entity '{$className}'.");
+                throw new DevelopmentException("No such method '{$methodName}' on entity '{$className}'.");
             }
             
-            $object->{$fieldName} = $method->invoke($entity);
+            $object->{$methodName} = $method->invoke($entity);
         }
         
         return $object;
