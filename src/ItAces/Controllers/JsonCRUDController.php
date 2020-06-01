@@ -3,6 +3,7 @@
 namespace ItAces\Controllers;
 
 use Illuminate\Http\Request;
+use ItAces\Publishable;
 use ItAces\Json\JsonCollectionSerializer;
 use ItAces\Json\JsonSerializer;
 use ItAces\Repositories\WithJoinsRepository;
@@ -107,6 +108,10 @@ class JsonCRUDController extends WebController
      */
     public function setClass(string $class)
     {
+        if (!(new \ReflectionClass($class))->implementsInterface(Publishable::class)) {
+            abort(403);
+        }
+        
         $this->class = $class;
         
         return $this;
