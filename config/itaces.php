@@ -3,21 +3,21 @@
 return [
     
     'upload' => [
-        'img' => 'upload/img',
-        'doc' => 'upload/doc',
-        'cache' => 'img'
+        'img' => 'images',
+        'doc' => 'doc',
+        'cache' => 'cache'
     ],
     
     'caches' => [
         'second_ttl' => env('DOCTRINE_SECOND_CACHE_TTL', 3600),
         'result_ttl' => env('DOCTRINE_RESULT_CACHE_TTL', 120),
     ],
-    
+
     'adapters' => [
-        //App\Model\Image::class => ItAces\Adapters\ImageAdapter::class,
+        'app-model-image' => ItAces\Adapters\ImageAdapter::class,
     ],
     
-    'acl' => ItAces\ACL\DefaultImplementation::class,
+    'acl' => ItAces\ACL\ManagedImplementation::class,
     
     'roles' => [
         'default' => 'registered',

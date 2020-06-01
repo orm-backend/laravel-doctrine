@@ -36,11 +36,11 @@ class ApiController
     public function search(Request  $request, string $classUrlName)
     {
         $class = Helper::classFromUlr($classUrlName);
-        $adapterClass = $this->adapters[$class] ?? null;
+        $adapterClass = $this->adapters[$classUrlName] ?? null;
         
         if ($adapterClass) {
             $adapter = new $adapterClass();
-            $response = $adapter->search($request);
+            $response = $adapter->search($request, $classUrlName);
             
             if ($response !== null) {
                 return $response;
@@ -59,11 +59,11 @@ class ApiController
     public function create(Request $request, string $classUrlName)
     {
         $class = Helper::classFromUlr($classUrlName);
-        $adapterClass = $this->adapters[$class] ?? null;
+        $adapterClass = $this->adapters[$classUrlName] ?? null;
         
         if ($adapterClass) {
             $adapter = new $adapterClass();
-            $response = $adapter->create($request);
+            $response = $adapter->create($request, $classUrlName);
             
             if ($response !== null) {
                 return $response;
@@ -83,11 +83,11 @@ class ApiController
     public function read(Request $request, string $classUrlName, int $id)
     {
         $class = Helper::classFromUlr($classUrlName);
-        $adapterClass = $this->adapters[$class] ?? null;
+        $adapterClass = $this->adapters[$classUrlName] ?? null;
         
         if ($adapterClass) {
             $adapter = new $adapterClass();
-            $response = $adapter->read($request, $id);
+            $response = $adapter->read($request, $classUrlName, $id);
             
             if ($response !== null) {
                 return $response;
@@ -107,11 +107,11 @@ class ApiController
     public function update(Request $request, string $classUrlName, int $id)
     {
         $class = Helper::classFromUlr($classUrlName);
-        $adapterClass = $this->adapters[$class] ?? null;
+        $adapterClass = $this->adapters[$classUrlName] ?? null;
         
         if ($adapterClass) {
             $adapter = new $adapterClass();
-            $response = $adapter->update($request, $id);
+            $response = $adapter->update($request, $classUrlName, $id);
             
             if ($response !== null) {
                 return $response;
@@ -131,11 +131,11 @@ class ApiController
     public function delete(Request $request, string $classUrlName, int $id)
     {
         $class = Helper::classFromUlr($classUrlName);
-        $adapterClass = $this->adapters[$class] ?? null;
+        $adapterClass = $this->adapters[$classUrlName] ?? null;
         
         if ($adapterClass) {
             $adapter = new $adapterClass();
-            $response = $adapter->delete($request, $id);
+            $response = $adapter->delete($request, $classUrlName, $id);
             
             if ($response !== null) {
                 return $response;

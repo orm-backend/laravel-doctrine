@@ -26,7 +26,6 @@ class Image
         }
         
         $disk = config('filesystems.default');
-        $rootPath = config("filesystems.disks.{$disk}.root");
         $rootUrl = config("filesystems.disks.{$disk}.url");
         $cached = self::cachePath($path, $mode, $width, $height);
         

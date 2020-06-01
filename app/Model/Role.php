@@ -3,10 +3,10 @@
 namespace App\Model;
 
 use ItAces\SoftDeleteable;
-use ItAces\UnderAdminControl;
+use ItAces\Publishable;
 
 
-class Role extends \ItAces\ORM\Entities\Role implements SoftDeleteable, UnderAdminControl
+class Role extends \ItAces\ORM\Entities\Role implements SoftDeleteable, Publishable
 {
     /**
      *

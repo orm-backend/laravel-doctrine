@@ -95,7 +95,7 @@ class QueryValidator
             }
             
             if (!array_key_exists($targetField, $classMetadata->fieldMappings)) {
-                throw new DevelopmentException("Unknown entity filed '{$targetField}' in order '{$field}'.");
+                throw new DevelopmentException("Unknown entity filed '{$targetField}'.");
             }
         }
     }
@@ -153,7 +153,6 @@ class QueryValidator
         $fieldOrAlias = null;
         $operator = null;
         $value = null;
-        $adonceValue = null;
         $length = count($comparisonData);
         
         if ($length == 1) {

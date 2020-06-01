@@ -2,9 +2,9 @@
 
 namespace ItAces\Types;
 
-use ItAces\UnderAdminControl;
+use ItAces\Publishable;
 
-interface FileType extends UnderAdminControl
+interface FileType extends Publishable
 {
     /**
      * Get request validation rules

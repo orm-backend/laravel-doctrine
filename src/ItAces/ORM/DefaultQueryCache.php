@@ -193,7 +193,7 @@ class DefaultQueryCache implements QueryCache
                 $assocKeys    = new CollectionCacheEntry(array_map($generateKeys, $assoc['list']));
                 $assocEntries = $assocRegion->getMultiple($assocKeys);
 
-                foreach ($assoc['list'] as $assocIndex => $assocId) {
+                foreach (array_keys($assoc['list']) as $assocIndex) {
                     $assocEntry = is_array($assocEntries) && array_key_exists($assocIndex, $assocEntries) ? $assocEntries[$assocIndex] : null;
 
                     if ($assocEntry === null) {

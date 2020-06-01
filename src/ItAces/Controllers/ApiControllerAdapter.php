@@ -3,52 +3,57 @@
 namespace ItAces\Controllers;
 
 use Illuminate\Http\Request;
-use ItAces\UnderAdminControl;
+use ItAces\Publishable;
 
 /**
  * 
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
-interface ApiControllerAdapter extends UnderAdminControl
+interface ApiControllerAdapter extends Publishable
 {
     
     /**
      *
      * @param  \Illuminate\Http\Request  $request
+     * @param  string $classUrlName
      * @return  \Illuminate\Http\JsonResponse
      */
-    public function search(Request $request);
+    public function search(Request $request, string $classUrlName);
     
     /**
      *
      * @param  \Illuminate\Http\Request  $request
+     * @param  string $classUrlName
      * @return  \Illuminate\Http\JsonResponse
      */
-    public function create(Request $request);
+    public function create(Request $request, string $classUrlName);
     
     /**
      *
      * @param  \Illuminate\Http\Request  $request
+     * @param  string $classUrlName
      * @param  integer  $id
      * @return  \Illuminate\Http\JsonResponse
      */
-    public function read(Request $request, int $id);
+    public function read(Request $request, string $classUrlName, int $id);
     
     /**
      *
      * @param  \Illuminate\Http\Request  $request
+     * @param  string $classUrlName
      * @param  integer  $id
      * @return  \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, int $id);
+    public function update(Request $request, string $classUrlName, int $id);
     
     /**
      *
      * @param  \Illuminate\Http\Request  $request
+     * @param  string $classUrlName
      * @param  integer  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function delete(Request $request, int $id);
+    public function delete(Request $request, string $classUrlName, int $id);
     
 }
