@@ -21,7 +21,7 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Sof
     use \Laravel\Passport\HasApiTokens;
     
     /**
-     * Fields to be excluded from the JSON response.
+     * Fields to be excluded from the response.
      *
      * @var string[]
      */
@@ -67,4 +67,11 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Sof
         });
     }
 
+    /**
+     * 
+     * @return string
+     */
+    public function getName() {
+        return $this->email;
+    }
 }
