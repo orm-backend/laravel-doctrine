@@ -239,7 +239,7 @@ DOCTRINE_RESULT_CACHE_TTL=120
 ],
 ```
 
-## VI. Запуск
+## VI. Starting
 
 * Check the mapping. Must get _[Mapping]  OK - The mapping files are correct._ And error _[Database] FAIL - The database schema is not in sync with the current mapping file._
 
