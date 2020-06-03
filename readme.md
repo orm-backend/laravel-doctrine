@@ -1,19 +1,21 @@
-# Расширения для интеграции laravel-doctrine
+# Extensions for Doctrine Integration
 
-## I. Джейсон-подобное формирование SQL запросов
+![Screenshot](Architectural.svg)
 
-Без каких-либо дополнительных средств позволяет конвертировать:
+## I. Json-like query building parameters
 
-1. Из параметров запроса -- автоматически сервером **PHP**
-2. В параметры запроса -- http\_build\_query (built-in function) **PHP**
-3. Из json -- json_decode (built-in function) **PHP**
-4. В json -- json_encode (built-in function) **PHP**
-5. Из параметров запроса -- jQuery.deparam **JS** (к сожалению, плагин) 
-6. В параметры запроса -- jQuery.param **JS**
+Without any additional funds allows you to convert:
 
-При этом HTTP запрос может быть осуществлен любым методом (GET, POST, PUT и т. д.).
+1. From request parameters -- native **PHP**
+2. To request parameters -- http\_build\_query (built-in function) **PHP**
+3. From json -- json_decode (built-in function) **PHP**
+4. To json -- json_encode (built-in function) **PHP**
+5. From request parameters -- jQuery.deparam **JS** (unfortunately plugin) 
+6. To request parameters -- jQuery.param **JS**
 
-Пример создания запроса к БД: 
+HTTP request can be made by any method (GET, POST, PUT и т. д.).
+
+An example of creating a database query: 
 
 ```PHP
 [
@@ -38,7 +40,7 @@
     'order' => ['user.name', '-user.createdBy.id']
 ];
 ```
-Его аналог на Doctrine (только фильтрация):  
+Its counterpart on Doctrine (filtering only):  
 
 ```PHP
 $qb->where(
@@ -56,7 +58,7 @@ $qb->where(
 );
 ```
 
-Результат DQL (только фильтрация):
+DQL result (filtering only):
 
 ```SQL
 LEFT JOIN user.createdBy user_createdBy
@@ -71,28 +73,28 @@ WHERE (
 ) AND user.id IN(:id5)
 ```
 
-Автоматическое формирование LEFT JOIN при необходимости, основываясь на частях select, filter, order. Возможность использования псевдонимов, выражения DQL (только на серверной стороне). Доступные операторы: eq neq gt gte lt lte isNull isNotNull like notLike in notIn between  
-Группировка и все с ней связанное не реализовывались умышленно. Расчет, что все статистические запросы будут кодироваться разработчиком самостоятельно. Если же вдруг требуется группировка для отображения данных пользователю, то вероятно, стоит подуать об изменении модели или формирования параметров запроса.
+Automatic generation of LEFT JOIN if necessary, based on parts of select, filter, order. Ability to use aliases, DQL expressions (only on the server side). Available operators: eq neq gt gte lt lte isNull isNotNull like notLike in notIn between  
+The grouping and everything connected with it were not realized intentionally Based on the fact that all statistical queries will be encoded by the developer independently.
 
-## II. Данная универсальность обмена параметрами и наличие маппинга Doctrine дала возможность вынести из контроллера валидацию связей между сущностями, наличия полей на сущностях, операторов, структуры параметров и очистку введенных пользователем значений со строгой типизацией внутрь этого пакета.
+## II. This universality of the exchange of parameters and the presence of Doctrine mapping made it possible to remove from the controller the validation of relationships between entities, the presence of fields on entities, operators, parameter structures and the clearing of user-entered values ​​with strict typing inside this package.
 
-Для облегчения разработки с использованием данного пакета создана и часто используется DevelopmentException с максимально подробым описанием ошибки разработчика.  
-Валидация введенных пользователем значений при запросах редактирования производится централизованно внутри модели, независимо от желания разработчика. Это дает возможность гарантировать целостность данных независимо от того, каким способом осуществляется их поставка, будь-то Seeder, Cron, Web, Api или самописный тестовый скрипт. При необходимости дополнительной валидации запроса, например, для проверки размера загружаемого файла, ее следует прописать в контроллере.
+To facilitate debugging, a Development Exception is used with a detailed description of the developer error.  
+Validation of user-entered values ​​for editing requests is performed centrally within the model. This makes it possible to guarantee data integrity no matter how they are delivered, whether it be Seeder, Cron, Web, Api or a self-written test script. If you need additional validation of the request, for example, to check the size of the downloaded file, it should be written in the controller.
 
-## III. Из коробки
+## III. Out of the box
 
-После установки и конфигурации пакета имеем:
+After installing and configuring the package, we have:
 
-1. санитарную обработку введенных пользователем данных
-2. валидацию введенных пользователем данных
-3. фильтрацию прямо по параметрам запроса, к ним даже не нужно обращаться в контроллере
-4. сортировку
-5. постраничную навигацию
-6. готовые сервисы API
-7. набор фиксов для интеграции пакета laravel-doctrine
-8. интеграцию интерфейса ACL
+1. sanitization of user input
+2. validation of user input
+3. filtering directly by request parameters, they do not even need to be accessed in the controller
+4. sorting
+5. pagination
+6. ready-made API services
+7. a set of fixes for integrating the laravel-doctrine package
+8. ACL Interface Integration
 
-Пример контроллера API:
+API controller example:
 
 ```PHP
 class CityController extends JsonCRUDController
@@ -101,7 +103,7 @@ class CityController extends JsonCRUDController
 }
 ```
 
-Пример сохранения сущности в веб-контроллере:
+An example of saving an entity in a web controller:
 
 ```PHP
 public function store(Request $request)
@@ -114,7 +116,7 @@ public function store(Request $request)
 }
 ```
 
-Пример поискового запроса в веб-контроллере:
+An example of a search query in a web controller:
 
 ```PHP
 public function index(Request  $request)
@@ -124,16 +126,10 @@ public function index(Request  $request)
     ]);
 }
 ```
-Этот код уже обладает всем перечисленным "Из коробки".
 
-## IV. Философия (или правильное использование)
-Идея Doctrine / Hibernate в том, что он не ходит в БД дважды за одним и тем же объектом. Как миимум втечении одного веб-запроса, но часто и гораздо дольше при использовании длинных сессий или вторичного кеша. Например, пусть в таблице пользователей есть несколько записей, а также у каждой из них селф-референс на создателя и редактора. Мы выбираем простым запросом __без джойнов__ все эти записи. А в гриде они отображаются вместе с именами и адресами создателей и/или редакторов. ORM сама подставляет их в соотвтствии с идентификаторами, не производя никаких дополнительных запросов. Запрос только один.  
-При правильной конфигурации и использовании вторичного кеширования можно ожидать, что запросы на выборку данных для их отображения вообще не будут производиться. Если кто-то отредактирует объект, то ORM просто заменит его во вторичном кеше.
-Для такого подхода необходимо принять, что **минимальной единицей информации для обмена данными с БД является объект**. Не следует производить выборку отдельных полей объекта. С этим надо согласиться, либо не использовать данные ORM.
+## IV. Installing
 
-## V. Установка
-
-* Подразумевается, что Laravel уже установлен и настроено соединение с базой данных. Добавляем репозиторий в composer.json
+* It is understood that Laravel is already installed and configured to connect to the database. Add repository to composer.json
 
 ```BASH
 "repositories": [
@@ -144,13 +140,13 @@ public function index(Request  $request)
 ]
 ```
 
-* Устанавливаем пакеты
+* Install packages
 
 ```BASH
 composer require it-aces/laravel-doctrine
 ```
 
-* Публикуем сущности User и Role с минимальным набором полей. При необходимости изменяем правила валидации и добавляем новые поля.
+* Publish User and Role entities with a minimal set of fields. If necessary, change the validation rules and add new fields.
 
 ```BASH
 php artisan vendor:publish --tag="itaces-model"
@@ -159,7 +155,7 @@ Copied Directory [/vendor/it-aces/laravel-doctrine/app/Model] To [/app/Model]
 Publishing complete.
 ```
 
-* Публикуем файл конфинурации Doctrine.
+* Publish Doctrine configuration file.
 
 ```BASH
 php artisan vendor:publish --tag="config"
@@ -168,7 +164,7 @@ Copied File [/vendor/laravel-doctrine/orm/config/doctrine.php] To [/config/doctr
 Publishing complete.
 ```
 
-* Необязательно. Для редактирования настроек публикуем файл конфинурации.
+* Not necessary. Publish the configuration file to edit the settings.
 
 ```BASH
 php artisan vendor:publish --tag="itaces-config"
@@ -177,9 +173,9 @@ Copied File [/vendor/it-aces/laravel-doctrine/config/itaces.php] To [/config/ita
 Publishing complete.
 ```
 
-## VI. Настройка
+## V. Setting up
 
-* Редактируем .env
+* Edit .env 
 
 ```BASH
 DOCTRINE_PROXY_AUTOGENERATE=1
@@ -188,7 +184,7 @@ DOCTRINE_SECOND_CACHE_TTL=3600
 DOCTRINE_RESULT_CACHE_TTL=120
 ```
 
-* Редактируем config/doctrine.php. Устанавливаем managers.default.meta в значение simplified_xml. Так как проект использует Simplified Xml Driver для работы с метаданными сущностей, необходимо, чтобы ключи массива managers.default.paths являлись полными путями к катологам моделей, а значениями пространства имен соответствующих моделей. При разработке модели рекомендуется наследовать сущности от родительский классов (например, в каталоге App\Entities). Это дает возможность управлять маппингом в родительских классах (XML код),  а правила валидации и другие PHP методы прописывать в App\Model. В итоге должно получиться примерно так:
+* Edit config/doctrine.php. Set managers.default.meta to simplified_xml. Since the project uses the Simplified Xml Driver to work with entity metadata, it is necessary that the keys of the managers.default.paths array are full paths to the model catalogs and the namespace values ​​of the corresponding models. When developing a model, it is recommended to inherit entities from the parent classes (for example, in the App\Entities directory). This makes it possible to control the mapping in the parent classes (XML code), and the validation rules and other PHP methods to register in the App\Model. The result should be something like this:
 
 ```PHP
 'default' => [
@@ -208,7 +204,7 @@ DOCTRINE_RESULT_CACHE_TTL=120
     ]
 ```
 
-* Редактируем config/database.php секцию mysql. Доюавляем ключ connections.mysql.serverVersion и устанавливаем его в значение, соответствующее версии используемого сервера базы данных. Это позволит избежать установок множества соединений для автоопределение версии, когда при использовании кеша фактически запросы к базе не выполняются. Проверяем, что ключ connections.mysql.unix_socket отсутствует или закомментирован. Значению connections.mysql.options присваиваем пустой массив. В итоге:
+* Edit the config/database.php mysql section. We add the key connections.mysql.serverVersion and set it to a value corresponding to the version of the database server used. This will avoid the installation of many connections for version auto-determination when, when using the cache, in fact, database queries are not executed. Check that the connections.mysql.unix_socket key is missing or commented out. The connections.mysql.options value is assigned an empty array. Eventually:
 
 ```PHP
 'mysql' => [
@@ -232,7 +228,7 @@ DOCTRINE_RESULT_CACHE_TTL=120
 ],
 ```
 
-* Редактируем config/auth.php. Устанавливаем значение doctrine для ключа providers.users.driver и проверяем, что в providers.users.model установлен App\Model\User::class. В итоге:
+* Editing config/auth.php. We set the doctrine value for the providers.users.driver key and verify that App\Model\ User::class is installed in providers.users.model. Eventually:
 
 ```PHP
 'providers' => [
@@ -243,9 +239,9 @@ DOCTRINE_RESULT_CACHE_TTL=120
 ],
 ```
 
-## VII. Запуск
+## VI. Запуск
 
-* Проверяем маппинг. Должны получить _[Mapping]  OK - The mapping files are correct._ И ошибку _[Database] FAIL - The database schema is not in sync with the current mapping file._
+* Check the mapping. Must get _[Mapping]  OK - The mapping files are correct._ And error _[Database] FAIL - The database schema is not in sync with the current mapping file._
 
 ```BASH
 php artisan doctrine:schema:validate
@@ -255,7 +251,7 @@ Validating for default entity manager...
 [Database] FAIL - The database schema is not in sync with the current mapping file.
 ```
 
-* Синхронизируем модель с БД.
+* Synchronize the model with the database.
 
 ```BASH
 php artisan doctrine:schema:update
@@ -265,7 +261,7 @@ Updating database schema...
 Database schema updated successfully! "11" query was executed
 ```
 
-* Создаем группы и администратора с логином _admin@it-aces.com_ и паролем _doctrine_
+* Create groups and an administrator with the login _admin@it-aces.com_ and the password _doctrine_
 
 ```BASH
 php artisan db:seed --class="ItAces\Database\Seeds\RoleTableSeeder"
@@ -275,11 +271,12 @@ php artisan db:seed --class="ItAces\Database\Seeds\UserTableSeeder"
 Database seeding completed successfully.
 ```
 
-* Запускаем сервер и проверяем доступность сервисов по адресу http://127.0.0.1:8000/api/entities/app-model-user/
+* Start the server and check the availability of services at http://127.0.0.1:8000/api/entities/app-model-user/
 
 ```JSON
 {"data":[{"createdAt":"1590328480","updatedAt":null,"deletedAt":null,"id":1,"email":"admin@it-aces.com","emailVerifiedAt":"1590328480","createdBy":null,"updatedBy":null,"deletedBy":null,"roles":[{"createdAt":"1590328473","updatedAt":null,"deletedAt":null,"id":2,"code":"admin","name":"Administrators","permission":992,"system":true}]}],"links":{"path":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user","first_page_url":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user?page=1","prev_page_url":null,"next_page_url":null},"meta":{"current_page":1,"per_page":20,"from":1,"to":1}}
 ```
 
-## VIII. Далее
-Этот пакет использует реализацию по-умолчанию интерфейса ACL, при которой пользователю с ID равным 1 можно абсолютно все, а всем другим, включая не авторизованных, разрешено только чтение. Вы можете создать свою реализацию этого интерфейса _\ItAces\ACL\AccessControl_ и подключить ее в конфигурации itaces.acl. Установка пакета **it-aces/laravel-doctrine-acl** даст возможность сохранять права доступа групп и переопределять их на сущностях в базе данных.
+## VII. What is next?
+
+This package uses the default implementation of the ACL interface, in which a user with an ID of 1 can do absolutely everything, and everyone else, including unauthorized ones, is allowed to read only. You can create your own implementation of this interface _\ItAces\ ACL\AccessControl_ and connect it in the itaces.acl configuration. Installing the package ** it-aces/laravel-doctrine-acl ** will make it possible to save group access rights and redefine them on entities in the database.
