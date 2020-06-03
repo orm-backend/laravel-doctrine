@@ -279,4 +279,4 @@ Database seeding completed successfully.
 
 ## VII. What is next?
 
-This package uses the default implementation of the ACL interface, in which a user with an ID of 1 can do absolutely everything, and everyone else, including unauthorized ones, is allowed to read only. You can create your own implementation of this interface _\ItAces\ ACL\AccessControl_ and connect it in the itaces.acl configuration. Installing the package ** it-aces/laravel-doctrine-acl ** will make it possible to save group access rights and redefine them on entities in the database.
+This package uses the default implementation of the ACL interface, in which a user with an ID of 1 can do absolutely everything, and everyone else, including unauthorized ones, is allowed to read only. You can create your own implementation of this interface _\ItAces\ ACL\AccessControl_ and connect it in the itaces.acl configuration. Installing the package [it-aces/laravel-doctrine-acl](https://bitbucket.org/vitaliy_kovalenko/laravel-doctrine-acl/src/master/) will make it possible to save group access rights and redefine them on entities in the database.
