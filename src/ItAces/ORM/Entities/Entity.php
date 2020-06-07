@@ -64,6 +64,13 @@ interface Entity
     public function setCreatedBy(Entity $createdBy);
     
     /**
+     * Get createdBy.
+     *
+     * @return \ItAces\ORM\Entities\Entity
+     */
+    public function getCreatedBy();
+    
+    /**
      * Set deletedBy.
      *
      * @param \ItAces\ORM\Entities\Entity|null $deletedBy
@@ -76,6 +83,13 @@ interface Entity
      * @return \ItAces\ORM\Entities\Entity|null
      */
     public function getDeletedBy();
+    
+    /**
+     * Set updatedBy.
+     *
+     * @param \ItAces\ORM\Entities\Entity|null $updatedBy
+     */
+    public function setUpdatedBy(Entity $updatedBy = null);
     
     /**
      * Get updatedBy.

@@ -210,14 +210,10 @@ abstract class BaseEntity implements Entity
      * Set updatedBy.
      *
      * @param \ItAces\ORM\Entities\Entity|null $updatedBy
-     *
-     * @return \ItAces\ORM\Entities\Entity
      */
     public function setUpdatedBy(Entity $updatedBy = null)
     {
         $this->updatedBy = $updatedBy;
-        
-        return $this;
     }
     
     /**
