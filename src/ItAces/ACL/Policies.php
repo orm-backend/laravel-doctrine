@@ -1,7 +1,7 @@
 <?php
 namespace ItAces\ACL;
 
-use ItAces\ORM\Entities\EntityBase;
+use ItAces\ORM\Entities\Entity;
 
 /**
  *
@@ -26,99 +26,99 @@ class Policies
     
     /**
      * 
-     * @param EntityBase $user
+     * @param Entity $user
      * @param string $classUrlName
      * @return bool
      */
-    public function isAnyCreatingAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyCreatingAllowed(?Entity $user, string $classUrlName) : bool
     {
         return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyCreatingAllowed($user, $classUrlName);
     }
     
     /**
      * 
-     * @param EntityBase $user
+     * @param Entity $user
      * @param string $classUrlName
      * @return bool
      */
-    public function isAnyReadingAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyReadingAllowed(?Entity $user, string $classUrlName) : bool
     {
         return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyReadingAllowed($user, $classUrlName);
     }
     
     /**
      * 
-     * @param EntityBase $user
+     * @param Entity $user
      * @param string $classUrlName
      * @return bool
      */
-    public function isAnyUpdatingAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyUpdatingAllowed(?Entity $user, string $classUrlName) : bool
     {
         return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyUpdatingAllowed($user, $classUrlName);
     }
     
     /**
      * 
-     * @param EntityBase $user
+     * @param Entity $user
      * @param string $classUrlName
      * @return bool
      */
-    public function isAnyDeletingAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyDeletingAllowed(?Entity $user, string $classUrlName) : bool
     {
         return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyDeletingAllowed($user, $classUrlName);
     }
     
     /**
      * 
-     * @param EntityBase $user
+     * @param Entity $user
      * @param string $classUrlName
      * @return bool
      */
-    public function isAnyRestoringAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyRestoringAllowed(?Entity $user, string $classUrlName) : bool
     {
         return config('itaces.softdelete', true) && ($this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyRestoringAllowed($user, $classUrlName));
     }
     
     /**
      * 
-     * @param EntityBase $user
-     * @param EntityBase $entity
+     * @param Entity $user
+     * @param Entity $entity
      * @return bool
      */
-    public function isReadingAllowed(?EntityBase $user, EntityBase $entity) : bool
+    public function isReadingAllowed(?Entity $user, Entity $entity) : bool
     {
         return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isReadingAllowed($user, $entity);
     }
     
     /**
      * 
-     * @param EntityBase $user
-     * @param EntityBase $entity
+     * @param Entity $user
+     * @param Entity $entity
      * @return bool
      */
-    public function isUpdatingAllowed(?EntityBase $user, EntityBase $entity) : bool
+    public function isUpdatingAllowed(?Entity $user, Entity $entity) : bool
     {
         return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isUpdatingAllowed($user, $entity);
     }
     
     /**
      * 
-     * @param EntityBase $user
-     * @param EntityBase $entity
+     * @param Entity $user
+     * @param Entity $entity
      * @return bool
      */
-    public function isDeletingAllowed(?EntityBase $user, EntityBase $entity) : bool
+    public function isDeletingAllowed(?Entity $user, Entity $entity) : bool
     {
         return $this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isDeletingAllowed($user, $entity);
     }
     
     /**
      * 
-     * @param EntityBase $user
-     * @param EntityBase $entity
+     * @param Entity $user
+     * @param Entity $entity
      * @return bool
      */
-    public function isRestoringAllowed(?EntityBase $user, EntityBase $entity) : bool
+    public function isRestoringAllowed(?Entity $user, Entity $entity) : bool
     {
         return config('itaces.softdelete', true) && $this->acl->isRestoringAllowed($user, $entity);
     }

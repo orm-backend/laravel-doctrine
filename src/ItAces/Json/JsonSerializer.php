@@ -6,7 +6,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use ItAces\ORM\DevelopmentException;
-use ItAces\ORM\Entities\EntityBase;
+use ItAces\ORM\Entities\Entity;
 use JsonSerializable;
 
 /**
@@ -18,7 +18,7 @@ class JsonSerializer implements JsonSerializable
 {
     /**
      * 
-     * @var \ItAces\ORM\Entities\EntityBase
+     * @var \ItAces\ORM\Entities\Entity
      */
     protected $entity;
     
@@ -43,10 +43,10 @@ class JsonSerializer implements JsonSerializable
     /**
      * 
      * @param \Doctrine\ORM\EntityManager $em
-     * @param \ItAces\ORM\Entities\EntityBase $entity
+     * @param \ItAces\ORM\Entities\Entity $entity
      * @param string[] $additional
      */
-    public function __construct(EntityManager $em, EntityBase $entity, array $additional = [])
+    public function __construct(EntityManager $em, Entity $entity, array $additional = [])
     {
         $this->em = $em;
         $this->classMetadata = $this->em->getClassMetadata(get_class($entity));
@@ -56,13 +56,13 @@ class JsonSerializer implements JsonSerializable
     
     /**
      * 
-     * @param \ItAces\ORM\Entities\EntityBase $entity
+     * @param \ItAces\ORM\Entities\Entity $entity
      * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
      * @param array $additional
      * @throws \ItAces\ORM\DevelopmentException
      * @return \stdClass
      */
-    static public function toJson(EntityBase $entity, ClassMetadata $classMetadata, array $additional = [])
+    static public function toJson(Entity $entity, ClassMetadata $classMetadata, array $additional = [])
     {
         $object = new \stdClass;
         $className = get_class($entity);

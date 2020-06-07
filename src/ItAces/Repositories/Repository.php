@@ -15,7 +15,7 @@ use ItAces\SoftDeleteable;
 use ItAces\ORM\DevelopmentException;
 use ItAces\ORM\Orderly;
 use ItAces\ORM\QueryFactory;
-use ItAces\ORM\Entities\EntityBase;
+use ItAces\ORM\Entities\Entity;
 use ItAces\Utility\Helper;
 use ItAces\Web\Fields\EntityContainer;
 use ItAces\Web\Fields\FieldContainer;
@@ -156,9 +156,9 @@ class Repository
      *
      * @param string $class
      * @param mixed $id
-     * @return \ItAces\ORM\Entities\EntityBase
+     * @return \ItAces\ORM\Entities\Entity
      */
-    public function findOrFail(string $class, $id) : EntityBase
+    public function findOrFail(string $class, $id) : Entity
     {
         if (!$id || (is_numeric($id) && (int) $id < 1)) {
             abort(400);
@@ -201,9 +201,9 @@ class Repository
      * @param array $data
      * @param int $id
      * @throws DevelopmentException
-     * @return \ItAces\ORM\Entities\EntityBase
+     * @return \ItAces\ORM\Entities\Entity
      */
-    public function createOrUpdate(string $class, array $data, int $id = null) : EntityBase
+    public function createOrUpdate(string $class, array $data, int $id = null) : Entity
     {
         $primaryName = $class::getIdentifierName();
         
@@ -414,7 +414,7 @@ class Repository
         ], $alias)->getResult();
     }
     
-    protected function createAssociation(string $class, array $data) : EntityBase
+    protected function createAssociation(string $class, array $data) : Entity
     {
         $entity = new $class();
         $this->initializeEntity($entity, $data);
@@ -438,7 +438,7 @@ class Repository
         return $parameters;
     }
     
-    protected function initializeEntity(EntityBase &$entity, array $data) : void
+    protected function initializeEntity(Entity &$entity, array $data) : void
     {
         $classMetadata = $this->em->getClassMetadata(get_class($entity));
         
@@ -453,7 +453,7 @@ class Repository
         }
     }
     
-    protected function initializeAssociations(EntityBase &$entity, array $data) : void
+    protected function initializeAssociations(Entity &$entity, array $data) : void
     {
         $classMetadata = $this->em->getClassMetadata(get_class($entity));
 
@@ -487,7 +487,7 @@ class Repository
                     $posted = [];
                     
                     foreach ($value as $association) {
-                        if ($association instanceof EntityBase) {
+                        if ($association instanceof Entity) {
                             $associations[] = $association;
                         } else if (is_numeric($association)) {
                             $id = (int) $association;
@@ -516,7 +516,7 @@ class Repository
                     }
                 }
             } else if ($fieldMapping['type'] & ClassMetadataInfo::TO_ONE) {
-                if ($value === null || ($value instanceof EntityBase)) {
+                if ($value === null || ($value instanceof Entity)) {
                     $association = $value;
                 } else if (is_numeric($value)) {
                     $association = $this->findOrFail($targetEntity, $value);

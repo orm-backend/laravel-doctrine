@@ -6,7 +6,7 @@ use App\Model\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
-use ItAces\ORM\Entities\EntityBase;
+use ItAces\ORM\Entities\Entity;
 use ItAces\Utility\Helper;
 
 
@@ -191,7 +191,7 @@ class DefaultImplementation implements AccessControl
      * {@inheritDoc}
      * @see \ItAces\ACL\AccessControl::isAnyCreatingAllowed()
      */
-    public function isAnyCreatingAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyCreatingAllowed(?Entity $user, string $classUrlName) : bool
     {
         $userId = $user ? $user->getId() : null;
         $permissions = $this->getCreateAccess($classUrlName, $userId);
@@ -212,7 +212,7 @@ class DefaultImplementation implements AccessControl
      * {@inheritDoc}
      * @see \ItAces\ACL\AccessControl::isAnyReadingAllowed()
      */
-    public function isAnyReadingAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyReadingAllowed(?Entity $user, string $classUrlName) : bool
     {
         $userId = $user ? $user->getId() : null;
         $permissions = $this->getReadAccess($classUrlName, $userId);
@@ -233,7 +233,7 @@ class DefaultImplementation implements AccessControl
      * {@inheritDoc}
      * @see \ItAces\ACL\AccessControl::isAnyUpdatingAllowed()
      */
-    public function isAnyUpdatingAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyUpdatingAllowed(?Entity $user, string $classUrlName) : bool
     {
         $userId = $user ? $user->getId() : null;
         $permissions = $this->getUpdateAccess($classUrlName, $userId);
@@ -254,7 +254,7 @@ class DefaultImplementation implements AccessControl
      * {@inheritDoc}
      * @see \ItAces\ACL\AccessControl::isAnyDeletingAllowed()
      */
-    public function isAnyDeletingAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyDeletingAllowed(?Entity $user, string $classUrlName) : bool
     {
         $userId = $user ? $user->getId() : null;
         $permissions = $this->getDeleteAccess($classUrlName, $userId);
@@ -275,7 +275,7 @@ class DefaultImplementation implements AccessControl
      * {@inheritDoc}
      * @see \ItAces\ACL\AccessControl::isAnyRestoringAllowed()
      */
-    public function isAnyRestoringAllowed(?EntityBase $user, string $classUrlName) : bool
+    public function isAnyRestoringAllowed(?Entity $user, string $classUrlName) : bool
     {
         $userId = $user ? $user->getId() : null;
         $permissions = $this->getRestoreAccess($classUrlName, $userId);
@@ -296,7 +296,7 @@ class DefaultImplementation implements AccessControl
      * {@inheritDoc}
      * @see \ItAces\ACL\AccessControl::isReadingAllowed()
      */
-    public function isReadingAllowed(?EntityBase $user, EntityBase $entity) : bool
+    public function isReadingAllowed(?Entity $user, Entity $entity) : bool
     {
         $userId = $user ? $user->getId() : null;
         $classUrlName = Helper::classToUrl(get_class($entity));
@@ -326,7 +326,7 @@ class DefaultImplementation implements AccessControl
      * {@inheritDoc}
      * @see \ItAces\ACL\AccessControl::isUpdatingAllowed()
      */
-    public function isUpdatingAllowed(?EntityBase $user, EntityBase $entity) : bool
+    public function isUpdatingAllowed(?Entity $user, Entity $entity) : bool
     {
         $userId = $user ? $user->getId() : null;
         $classUrlName = Helper::classToUrl(get_class($entity));
@@ -356,7 +356,7 @@ class DefaultImplementation implements AccessControl
      * {@inheritDoc}
      * @see \ItAces\ACL\AccessControl::isDeletingAllowed()
      */
-    public function isDeletingAllowed(?EntityBase $user, EntityBase $entity) : bool
+    public function isDeletingAllowed(?Entity $user, Entity $entity) : bool
     {
         $userId = $user ? $user->getId() : null;
         $classUrlName = Helper::classToUrl(get_class($entity));
@@ -386,7 +386,7 @@ class DefaultImplementation implements AccessControl
      * {@inheritDoc}
      * @see \ItAces\ACL\AccessControl::isRestoringAllowed()
      */
-    public function isRestoringAllowed(?EntityBase $user, EntityBase $entity) : bool
+    public function isRestoringAllowed(?Entity $user, Entity $entity) : bool
     {
         $userId = $user ? $user->getId() : null;
         $classUrlName = Helper::classToUrl(get_class($entity));

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use ItAces\ORM\DevelopmentException;
 use ItAces\Types\FileType;
 
-abstract class EntityBase
+abstract class BaseEntity implements Entity
 {
     private static $identifiers = [];
 
@@ -62,17 +62,17 @@ abstract class EntityBase
     protected $deletedAt;
     
     /**
-     * @var \ItAces\ORM\Entities\EntityBase
+     * @var \ItAces\ORM\Entities\Entity
      */
     protected $createdBy;
     
     /**
-     * @var \ItAces\ORM\Entities\EntityBase
+     * @var \ItAces\ORM\Entities\Entity
      */
     protected $deletedBy;
     
     /**
-     * @var \ItAces\ORM\Entities\EntityBase
+     * @var \ItAces\ORM\Entities\Entity
      */
     protected $updatedBy;
     
@@ -129,7 +129,7 @@ abstract class EntityBase
      *
      * @param \Carbon\Carbon $createdAt
      *
-     * @return \ItAces\ORM\Entities\EntityBase
+     * @return \ItAces\ORM\Entities\Entity
      */
     public function setCreatedAt($createdAt)
     {
@@ -153,7 +153,7 @@ abstract class EntityBase
      *
      * @param \Carbon\Carbon|null $updatedAt
      *
-     * @return \ItAces\ORM\Entities\EntityBase
+     * @return \ItAces\ORM\Entities\Entity
      */
     public function setUpdatedAt($updatedAt = null)
     {
@@ -165,11 +165,11 @@ abstract class EntityBase
     /**
      * Set createdBy.
      *
-     * @param \ItAces\ORM\Entities\EntityBase $createdBy
+     * @param \ItAces\ORM\Entities\Entity $createdBy
      *
-     * @return \ItAces\ORM\Entities\EntityBase
+     * @return \ItAces\ORM\Entities\Entity
      */
-    public function setCreatedBy(EntityBase $createdBy)
+    public function setCreatedBy(Entity $createdBy)
     {
         $this->createdBy = $createdBy;
         
@@ -179,7 +179,7 @@ abstract class EntityBase
     /**
      * Get createdBy.
      *
-     * @return \ItAces\ORM\Entities\EntityBase
+     * @return \ItAces\ORM\Entities\Entity
      */
     public function getCreatedBy()
     {
@@ -189,9 +189,9 @@ abstract class EntityBase
     /**
      * Set deletedBy.
      *
-     * @param \ItAces\ORM\Entities\EntityBase|null $deletedBy
+     * @param \ItAces\ORM\Entities\Entity|null $deletedBy
      */
-    public function setDeletedBy(EntityBase $deletedBy = null)
+    public function setDeletedBy(Entity $deletedBy = null)
     {
         $this->deletedBy = $deletedBy;
     }
@@ -199,7 +199,7 @@ abstract class EntityBase
     /**
      * Get deletedBy.
      *
-     * @return \ItAces\ORM\Entities\EntityBase|null
+     * @return \ItAces\ORM\Entities\Entity|null
      */
     public function getDeletedBy()
     {
@@ -209,11 +209,11 @@ abstract class EntityBase
     /**
      * Set updatedBy.
      *
-     * @param \ItAces\ORM\Entities\EntityBase|null $updatedBy
+     * @param \ItAces\ORM\Entities\Entity|null $updatedBy
      *
-     * @return \ItAces\ORM\Entities\EntityBase
+     * @return \ItAces\ORM\Entities\Entity
      */
-    public function setUpdatedBy(EntityBase $updatedBy = null)
+    public function setUpdatedBy(Entity $updatedBy = null)
     {
         $this->updatedBy = $updatedBy;
         
@@ -223,7 +223,7 @@ abstract class EntityBase
     /**
      * Get updatedBy.
      *
-     * @return \ItAces\ORM\Entities\EntityBase|null
+     * @return \ItAces\ORM\Entities\Entity|null
      */
     public function getUpdatedBy()
     {

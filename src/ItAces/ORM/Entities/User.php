@@ -2,7 +2,7 @@
 
 namespace ItAces\ORM\Entities;
 
-abstract class User extends \ItAces\ORM\Entities\EntityBase
+abstract class User extends \ItAces\ORM\Entities\BaseEntity
 {
 
     /**

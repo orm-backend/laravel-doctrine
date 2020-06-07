@@ -5,7 +5,7 @@ namespace ItAces\ORM\Entities;
 /**
  * Role
  */
-abstract class Role extends \ItAces\ORM\Entities\EntityBase
+abstract class Role extends \ItAces\ORM\Entities\BaseEntity
 {
     /**
      * @var int

@@ -2,7 +2,7 @@
 
 namespace ItAces;
 
-use ItAces\ORM\Entities\EntityBase;
+use ItAces\ORM\Entities\Entity;
 
 /**
  * 
@@ -29,14 +29,14 @@ interface SoftDeleteable
     /**
      * Set deletedBy.
      *
-     * @param \ItAces\ORM\Entities\EntityBase|null $deletedBy
+     * @param \ItAces\ORM\Entities\Entity|null $deletedBy
      */
-    public function setDeletedBy(EntityBase $deletedBy = null);
+    public function setDeletedBy(Entity $deletedBy = null);
     
     /**
      * Get deletedBy.
      *
-     * @return \ItAces\ORM\Entities\EntityBase|null
+     * @return \ItAces\ORM\Entities\Entity|null
      */
     public function getDeletedBy();
     

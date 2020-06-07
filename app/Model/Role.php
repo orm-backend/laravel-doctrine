@@ -11,7 +11,7 @@ class Role extends \ItAces\ORM\Entities\Role implements SoftDeleteable, Publisha
     /**
      *
      * {@inheritDoc}
-     * @see \ItAces\ORM\Entities\EntityBase::getModelValidationRules()
+     * @see \ItAces\ORM\Entities\Entity::getModelValidationRules()
      */
     public function getModelValidationRules()
     {
@@ -24,7 +24,7 @@ class Role extends \ItAces\ORM\Entities\Role implements SoftDeleteable, Publisha
     /**
      *
      * {@inheritDoc}
-     * @see \ItAces\ORM\Entities\EntityBase::getRequestValidationRules()
+     * @see \ItAces\ORM\Entities\Entity::getRequestValidationRules()
      */
     static public function getRequestValidationRules()
     {

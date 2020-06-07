@@ -30,7 +30,7 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Sof
     /**
      *
      * {@inheritDoc}
-     * @see \ItAces\ORM\Entities\EntityBase::getModelValidationRules()
+     * @see \ItAces\ORM\Entities\Entity::getModelValidationRules()
      */
     public function getModelValidationRules()
     {
@@ -45,7 +45,7 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Sof
     /**
      *
      * {@inheritDoc}
-     * @see \ItAces\ORM\Entities\EntityBase::getRequestValidationRules()
+     * @see \ItAces\ORM\Entities\Entity::getRequestValidationRules()
      */
     static public function getRequestValidationRules()
     {

@@ -24,7 +24,7 @@ class JsonCollectionSerializer implements JsonSerializable
     
     /**
      * 
-     * @var \ItAces\ORM\Entities\EntityBase[]
+     * @var \ItAces\ORM\Entities\Entity[]
      */
     protected $entities;
     
