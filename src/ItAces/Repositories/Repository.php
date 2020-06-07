@@ -3,6 +3,7 @@
 namespace ItAces\Repositories;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,6 @@ use ItAces\ORM\Entities\EntityBase;
 use ItAces\Utility\Helper;
 use ItAces\Web\Fields\EntityContainer;
 use ItAces\Web\Fields\FieldContainer;
-use Doctrine\Common\Cache\ArrayCache;
 
 /**
  * This repository does not join any data from related entities.
@@ -30,6 +30,7 @@ class Repository
 {
     
     /**
+     * Result query caching without where clause
      * 
      * @var boolean
      */
@@ -167,10 +168,25 @@ class Repository
          * There is no way to use this repository method because the object will not be cached.
          * Since the presence of filtering options will disable caching.
          */
-        $entity = $this->em()->getRepository($class)->find($id);
+        //$entity = $this->em()->getRepository($class)->find($id);
         
-        if (!$entity) {
-            abort(404);
+        /**
+         * We will not get associations if we do not use our repository.
+         */
+        $alias = lcfirst( (new \ReflectionClass($class))->getShortName() );
+        $parameters = [
+            'filter' => [
+                [$alias.'.id', 'eq', $id]
+            ]
+        ];
+        
+        $parameters = $this->appendAdditionalParameters($class, $parameters, $alias);
+        $entity = null;
+        
+        try {
+            $entity = $this->getQuery($class, $parameters, $alias)->getSingleResult();
+        } catch (NoResultException $e) {
+            abort(404, 'Not found.');
         }
 
         Gate::authorize('read-record', $entity);
@@ -515,20 +531,22 @@ class Repository
 
     protected function enableCaches(Query &$query, string $className)
     {
-        if ($this->cacheable) {
-            /**
-             * Turn on the 2nd cache only if there are no filtering options.
-             */
-            if ($query->getAST()->whereClause) {
-                $query->setResultCacheDriver(new ArrayCache());
-            } else if ($this->em->getConfiguration()->isSecondLevelCacheEnabled() && $this->em->getClassMetadata($className)->cache) {
-                $query->setLifetime( $this->em->getConfiguration()->getSecondLevelCacheConfiguration()->getRegionsConfiguration()->getDefaultLifetime() );
-                $query->setCacheable(true);
+        /**
+         * Turn on the 2nd cache only if there are no filtering options.
+         */
+        if ($query->getAST()->whereClause) {
+            if ($this->cacheable) {
+                $query->enableResultCache(config('itaces.caches.result_ttl', 120));
             }
+        } else if ($this->em->getConfiguration()->isSecondLevelCacheEnabled() && $this->em->getClassMetadata($className)->cache) {
+            $query->setLifetime( $this->em->getConfiguration()->getSecondLevelCacheConfiguration()->getRegionsConfiguration()->getDefaultLifetime() );
+            $query->setCacheable(true);
         }
     }
     
     /**
+     * Is the result cache enabled for the query without a where clause or not?
+     * 
      * @return boolean
      */
     public function isCacheable()
@@ -537,6 +555,8 @@ class Repository
     }
 
     /**
+     * Enable or disable the result cache for a query without a where clause
+     * 
      * @param boolean $cacheable
      */
     public function setCacheable(bool $cacheable)
