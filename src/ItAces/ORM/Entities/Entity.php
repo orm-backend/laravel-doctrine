@@ -10,6 +10,18 @@ interface Entity
      * @return array
      */
     public static function getIdentifier();
+
+    /**
+     * Get identifier name
+     * @return string
+     */
+    static public function getIdentifierName();
+
+    /**
+     * Get identifier type
+     * @return string
+     */
+    static public function getIdentifierType();
     
     /**
      * @return array

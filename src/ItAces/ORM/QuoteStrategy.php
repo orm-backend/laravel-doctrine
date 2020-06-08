@@ -11,7 +11,9 @@ class QuoteStrategy extends AnsiQuoteStrategy
 
     public function getColumnName($fieldName, ClassMetadata $class, AbstractPlatform $platform)
     {
-        return $this->quote( parent::getColumnName($fieldName, $class, $platform) );
+        $columnName = parent::getColumnName($fieldName, $class, $platform);
+        
+        return in_array($fieldName, $class->identifier) ? $columnName : $this->quote( $columnName );
     }
 
     public function getTableName(ClassMetadata $class, AbstractPlatform $platform)
