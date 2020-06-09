@@ -46,7 +46,7 @@ class Orderly
                 break;
             case Types::FLOAT:
             case Types::DECIMAL:
-                $value = filter_var($value, FILTER_SANITIZE_NUMBER_FLOAT);
+                $value = filter_var($value, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
                 $value = (float) $value;
                 break;
             case Types::BOOLEAN:
@@ -56,7 +56,7 @@ class Orderly
             case Types::DATE_MUTABLE:
             case Types::DATETIME_MUTABLE:
             case Types::DATETIMETZ_MUTABLE:
-            //TODO case Types::TIME_MUTABLE:
+            case Types::TIME_MUTABLE:
                 if (is_string($value)) {
                     $value = trim($value);
                 }

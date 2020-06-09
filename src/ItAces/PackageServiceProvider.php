@@ -18,6 +18,7 @@ use ItAces\ORM\QuoteStrategy;
 use ItAces\Rules\ArrayOfInteger;
 use ItAces\Rules\PersistentCollection;
 use ItAces\Rules\PersistentFile;
+use ItAces\DBAL\Types\CarbonTime;
 
 /**
  *
@@ -102,6 +103,7 @@ class PackageServiceProvider extends ServiceProvider
             __DIR__.'/../../config/itaces.php', 'itaces'
         );
         
+        $this->addType(Types::TIME_MUTABLE, CarbonTime::class);
         $this->addType(Types::DATE_MUTABLE, CarbonDate::class);
         $this->addType(Types::DATETIME_MUTABLE, CarbonDateTime::class);
         $this->addType(Types::DATETIMETZ_MUTABLE, CarbonDateTime::class);

@@ -11,7 +11,7 @@ use Doctrine\DBAL\Types\DateTimeType;
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
-class CarbonTime extends DateTimeType
+class CarbonDateTime extends DateTimeType
 {
 
     public function convertToPHPValue($value, AbstractPlatform $platform)
