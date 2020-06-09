@@ -4,14 +4,14 @@ namespace ItAces\DBAL\Types;
 
 use Carbon\Carbon;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Types\DateTimeType;
+use Doctrine\DBAL\Types\TimeType;
 
 /**
  * 
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
-class CarbonDateTime extends DateTimeType
+class CarbonTime extends TimeType
 {
 
     public function convertToPHPValue($value, AbstractPlatform $platform)
