@@ -14,10 +14,10 @@ return [
     ],
 
     'adapters' => [
-        'app-model-image' => ItAces\Adapters\ImageAdapter::class,
+        'app-model-image' => VVK\Adapters\ImageAdapter::class,
     ],
     
-    'acl' => ItAces\ACL\ManagedImplementation::class,
+    'acl' => VVK\ACL\ManagedImplementation::class,
     
     'roles' => [
         'default' => 'registered',

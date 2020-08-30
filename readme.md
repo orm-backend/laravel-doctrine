@@ -143,7 +143,7 @@ public function index(Request  $request)
 * Install packages
 
 ```BASH
-composer require it-aces/laravel-doctrine
+composer require vvk/laravel-doctrine
 ```
 
 * Publish User and Role entities with a minimal set of fields. If necessary, change the validation rules and add new fields.
@@ -151,7 +151,7 @@ composer require it-aces/laravel-doctrine
 ```BASH
 php artisan vendor:publish --tag="itaces-model"
 
-Copied Directory [/vendor/it-aces/laravel-doctrine/app/Model] To [/app/Model]
+Copied Directory [/vendor/vvk/laravel-doctrine/app/Model] To [/app/Model]
 Publishing complete.
 ```
 
@@ -169,7 +169,7 @@ Publishing complete.
 ```BASH
 php artisan vendor:publish --tag="itaces-config"
 
-Copied File [/vendor/it-aces/laravel-doctrine/config/itaces.php] To [/config/itaces.php]
+Copied File [/vendor/vvk/laravel-doctrine/config/itaces.php] To [/config/itaces.php]
 Publishing complete.
 ```
 
@@ -261,22 +261,22 @@ Updating database schema...
 Database schema updated successfully! "11" query was executed
 ```
 
-* Create groups and an administrator with the login _admin@it-aces.com_ and the password _doctrine_
+* Create groups and an administrator with the login _admin@vvk.com_ and the password _doctrine_
 
 ```BASH
-php artisan db:seed --class="ItAces\Database\Seeds\RoleTableSeeder"
+php artisan db:seed --class="VVK\Database\Seeds\RoleTableSeeder"
 Database seeding completed successfully.
 
-php artisan db:seed --class="ItAces\Database\Seeds\UserTableSeeder"
+php artisan db:seed --class="VVK\Database\Seeds\UserTableSeeder"
 Database seeding completed successfully.
 ```
 
 * Start the server and check the availability of services at http://127.0.0.1:8000/api/entities/app-model-user/
 
 ```JSON
-{"data":[{"createdAt":"1590328480","updatedAt":null,"deletedAt":null,"id":1,"email":"admin@it-aces.com","emailVerifiedAt":"1590328480","createdBy":null,"updatedBy":null,"deletedBy":null,"roles":[{"createdAt":"1590328473","updatedAt":null,"deletedAt":null,"id":2,"code":"admin","name":"Administrators","permission":992,"system":true}]}],"links":{"path":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user","first_page_url":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user?page=1","prev_page_url":null,"next_page_url":null},"meta":{"current_page":1,"per_page":20,"from":1,"to":1}}
+{"data":[{"createdAt":"1590328480","updatedAt":null,"deletedAt":null,"id":1,"email":"admin@vvk.com","emailVerifiedAt":"1590328480","createdBy":null,"updatedBy":null,"deletedBy":null,"roles":[{"createdAt":"1590328473","updatedAt":null,"deletedAt":null,"id":2,"code":"admin","name":"Administrators","permission":992,"system":true}]}],"links":{"path":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user","first_page_url":"http:\/\/127.0.0.1:8000\/api\/entities\/app-model-user?page=1","prev_page_url":null,"next_page_url":null},"meta":{"current_page":1,"per_page":20,"from":1,"to":1}}
 ```
 
 ## VII. What is next?
 
-This package uses the default implementation of the ACL interface, in which a user with an ID of 1 can do absolutely everything, and everyone else, including unauthorized ones, is allowed to read only. You can create your own implementation of this interface _\ItAces\ ACL\AccessControl_ and connect it in the itaces.acl configuration. Installing the package [it-aces/laravel-doctrine-acl](https://bitbucket.org/vitaliy_kovalenko/laravel-doctrine-acl/src/master/) will make it possible to save group access rights and redefine them on entities in the database.
+This package uses the default implementation of the ACL interface, in which a user with an ID of 1 can do absolutely everything, and everyone else, including unauthorized ones, is allowed to read only. You can create your own implementation of this interface _\VVK\ ACL\AccessControl_ and connect it in the itaces.acl configuration. Installing the package [vvk/laravel-doctrine-acl](https://bitbucket.org/vitaliy_kovalenko/laravel-doctrine-acl/src/master/) will make it possible to save group access rights and redefine them on entities in the database.

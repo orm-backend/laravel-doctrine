@@ -1,5 +1,5 @@
 <?php
-namespace ItAces\Database\Seeds;
+namespace VVK\Database\Seeds;
 
 use App\Model\Role;
 use App\Model\User;
@@ -18,7 +18,7 @@ class UserTableSeeder extends Seeder
         $em = app('em');
         $role = $em->getRepository(Role::class)->findOneBy(['code' => config('itaces.roles.administrator', 'admin')]);
         $user = new User();
-        $user->setEmail('admin@it-aces.com');
+        $user->setEmail('admin@vvk.com');
         $user->setPassword(Hash::make('doctrine'));
         $user->setEmailVerifiedAt( now() );
         $user->addRole($role);

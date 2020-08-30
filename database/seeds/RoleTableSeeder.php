@@ -1,5 +1,5 @@
 <?php
-namespace ItAces\Database\Seeds;
+namespace VVK\Database\Seeds;
 
 use App\Model\Role;
 use Illuminate\Database\Seeder;

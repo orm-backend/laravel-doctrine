@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                          https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+	<mapped-superclass name="VVK\ORM\Entities\User">
+		<indexes>
+			<index name="user_email_verified_at_index" columns="email_verified_at" />
+			<index name="user_remember_token_index" columns="remember_token" />
+			<index name="user_created_at_index" columns="created_at" />
+			<index name="user_updated_at_index" columns="updated_at" />
+			<index name="user_deleted_at_index" columns="deleted_at" />
+			<index name="user_created_by_index" columns="created_by" />
+			<index name="user_updated_by_index" columns="updated_by" />
+			<index name="user_deleted_by_index" columns="deleted_by" />
+		</indexes>
+		<unique-constraints>
+			<unique-constraint name="user_email_unique" columns="email" />
+		</unique-constraints>
+		<id name="id" type="integer" column="id">
+			<options>
+				<option name="unsigned">1</option>
+			</options>
+			<generator strategy="IDENTITY" />
+		</id>
+		<field name="email" type="string" column="email" length="255" nullable="false">
+			<options>
+				<option name="fixed" />
+			</options>
+		</field>
+		<field name="emailVerifiedAt" type="datetime" column="email_verified_at" nullable="true" />
+		<field name="password" type="string" column="password" length="255" nullable="false">
+			<options>
+				<option name="fixed" />
+			</options>
+		</field>
+		<field name="rememberToken" type="string" column="remember_token" length="100" nullable="true">
+			<options>
+				<option name="fixed" />
+			</options>
+		</field>
+		<many-to-many field="roles" target-entity="App\Model\Role" fetch="LAZY">
+			<cache usage="NONSTRICT_READ_WRITE" />
+			<cascade>
+				<cascade-all />
+			</cascade>
+			<join-table name="d_user_role">
+				<join-columns>
+					<join-column name="user_id" referenced-column-name="id" on-delete="CASCADE" />
+				</join-columns>
+				<inverse-join-columns>
+					<join-column name="role_id" referenced-column-name="id" />
+				</inverse-join-columns>
+			</join-table>
+			<order-by>
+				<order-by-field name="name" direction="ASC" />
+			</order-by>
+		</many-to-many>
+		<association-overrides>
+			<association-override name="createdBy">
+				<join-columns>
+					<join-column name="created_by" referenced-column-name="id" nullable="true" />
+				</join-columns>
+			</association-override>
+		</association-overrides>
+	</mapped-superclass>
+</doctrine-mapping>
