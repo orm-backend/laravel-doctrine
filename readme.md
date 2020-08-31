@@ -264,10 +264,10 @@ Database schema updated successfully! "11" query was executed
 * Create groups and an administrator with the login _admin@vvk.com_ and the password _doctrine_
 
 ```BASH
-php artisan db:seed --class="VVK\Database\Seeds\RoleTableSeeder"
+php artisan db:seed --class="OrmBackend\Database\Seeds\RoleTableSeeder"
 Database seeding completed successfully.
 
-php artisan db:seed --class="VVK\Database\Seeds\UserTableSeeder"
+php artisan db:seed --class="OrmBackend\Database\Seeds\UserTableSeeder"
 Database seeding completed successfully.
 ```
 
@@ -279,4 +279,4 @@ Database seeding completed successfully.
 
 ## VII. What is next?
 
-This package uses the default implementation of the ACL interface, in which a user with an ID of 1 can do absolutely everything, and everyone else, including unauthorized ones, is allowed to read only. You can create your own implementation of the interface _\VVK\ACL\AccessControl_ and connect it in the itaces.acl configuration. Installing the package [vvk/laravel-doctrine-acl](https://github.com/vvk-kolsky/laravel-doctrine-acl/src/master/) will make it possible to save group access rights and redefine them on entities in the database.
+This package uses the default implementation of the ACL interface, in which a user with an ID of 1 can do absolutely everything, and everyone else, including unauthorized ones, is allowed to read only. You can create your own implementation of the interface _\OrmBackend\ACL\AccessControl_ and connect it in the itaces.acl configuration. Installing the package [orm-backend/laravel-doctrine-acl](https://github.com/vvk-kolsky/laravel-doctrine-acl/src/master/) will make it possible to save group access rights and redefine them on entities in the database.

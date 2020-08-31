@@ -14,10 +14,10 @@ return [
     ],
 
     'adapters' => [
-        'app-model-image' => VVK\Adapters\ImageAdapter::class,
+        'app-model-image' => OrmBackend\Adapters\ImageAdapter::class,
     ],
     
-    'acl' => VVK\ACL\ManagedImplementation::class,
+    //'acl' => OrmBackend\ACL\ManagedImplementation::class,
     
     'roles' => [
         'default' => 'registered',

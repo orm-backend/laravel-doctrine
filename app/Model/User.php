@@ -6,18 +6,18 @@ use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use VVK\SoftDeleteable;
-use VVK\Publishable;
+use OrmBackend\SoftDeleteable;
+use OrmBackend\Publishable;
 
-class User extends \VVK\ORM\Entities\User
+class User extends \OrmBackend\ORM\Entities\User
 implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, SoftDeleteable, Publishable
 {
     use \Illuminate\Auth\Passwords\CanResetPassword;
     use \Illuminate\Foundation\Auth\Access\Authorizable;
-    use \VVK\Traits\Notifiable;
-    use \VVK\Traits\MustVerifyEmail;
-    use \VVK\Traits\Authenticatable;
-    use \VVK\Traits\UsesPasswordGrant;
+    use \OrmBackend\Traits\Notifiable;
+    use \OrmBackend\Traits\MustVerifyEmail;
+    use \OrmBackend\Traits\Authenticatable;
+    use \OrmBackend\Traits\UsesPasswordGrant;
     use \Laravel\Passport\HasApiTokens;
     
     /**
@@ -30,7 +30,7 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Sof
     /**
      *
      * {@inheritDoc}
-     * @see \VVK\ORM\Entities\Entity::getModelValidationRules()
+     * @see \OrmBackend\ORM\Entities\Entity::getModelValidationRules()
      */
     public function getModelValidationRules()
     {
@@ -45,7 +45,7 @@ implements Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail, Sof
     /**
      *
      * {@inheritDoc}
-     * @see \VVK\ORM\Entities\Entity::getRequestValidationRules()
+     * @see \OrmBackend\ORM\Entities\Entity::getRequestValidationRules()
      */
     static public function getRequestValidationRules()
     {

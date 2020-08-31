@@ -1,5 +1,5 @@
 <?php
-namespace VVK\Database\Seeds;
+namespace OrmBackend\Database\Seeds;
 
 use App\Model\Role;
 use Illuminate\Database\Seeder;

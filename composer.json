@@ -1,10 +1,10 @@
 {
-	"name" : "vvk/laravel-doctrine",
+	"name" : "orm-backend/laravel-doctrine",
 	"description" : "Adds support for Doctrine integration",
 	"type" : "library",
 	"license" : "MIT",
 	"keywords" : [
-		"vvk",
+		"orm-backend",
 		"laravel-doctrine",
 		"laravel",
 		"doctrine"
@@ -24,8 +24,8 @@
 	},
 	"autoload" : {
 		"psr-4" : {
-			"VVK\\" : "src/VVK/",
-			"VVK\\Database\\Seeds\\" : "database/seeds/"
+			"OrmBackend\\" : "src/OrmBackend/",
+			"OrmBackend\\Database\\Seeds\\" : "database/seeds/"
 		},
 		"files" : [
 			"src/functions.php"
@@ -34,7 +34,7 @@
 	"extra" : {
 		"laravel" : {
 			"providers" : [
-				"VVK\\PackageServiceProvider"
+				"OrmBackend\\PackageServiceProvider"
 			]
 		}
 	}
