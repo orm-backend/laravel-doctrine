@@ -48,7 +48,7 @@ class PackageServiceProvider extends ServiceProvider
         $this->bootModel(
             $manager,
             [
-                base_path('vendor/vvk/laravel-doctrine/src/OrmBackend/ORM/Entities') => 'OrmBackend\ORM\Entities'
+                base_path('vendor/orm-backend/laravel-doctrine/src/OrmBackend/ORM/Entities') => 'OrmBackend\ORM\Entities'
             ],
             'OrmBackend\ORM\Entities'
         );
@@ -97,7 +97,7 @@ class PackageServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        require_once base_path('vendor') . '/vvk/laravel-doctrine/src/functions.php';
+        require_once base_path('vendor') . '/orm-backend/laravel-doctrine/src/functions.php';
         
         $this->mergeConfigFrom(
             __DIR__.'/../../config/itaces.php', 'itaces'

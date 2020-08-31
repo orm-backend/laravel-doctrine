@@ -143,7 +143,7 @@ public function index(Request  $request)
 * Install packages
 
 ```BASH
-composer require vvk/laravel-doctrine
+composer require orm-backend/laravel-doctrine
 ```
 
 * Publish User and Role entities with a minimal set of fields. If necessary, change the validation rules and add new fields.
@@ -151,7 +151,7 @@ composer require vvk/laravel-doctrine
 ```BASH
 php artisan vendor:publish --tag="itaces-model"
 
-Copied Directory [/vendor/vvk/laravel-doctrine/app/Model] To [/app/Model]
+Copied Directory [/vendor/orm-backend/laravel-doctrine/app/Model] To [/app/Model]
 Publishing complete.
 ```
 
@@ -169,7 +169,7 @@ Publishing complete.
 ```BASH
 php artisan vendor:publish --tag="itaces-config"
 
-Copied File [/vendor/vvk/laravel-doctrine/config/itaces.php] To [/config/itaces.php]
+Copied File [/vendor/orm-backend/laravel-doctrine/config/itaces.php] To [/config/itaces.php]
 Publishing complete.
 ```
 
