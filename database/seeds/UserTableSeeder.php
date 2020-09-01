@@ -18,7 +18,7 @@ class UserTableSeeder extends Seeder
         $em = app('em');
         $role = $em->getRepository(Role::class)->findOneBy(['code' => config('ormbackend.roles.administrator', 'admin')]);
         $user = new User();
-        $user->setEmail('admin@vvk.com');
+        $user->setEmail('admin@orm-backend.com');
         $user->setPassword(Hash::make('doctrine'));
         $user->setEmailVerifiedAt( now() );
         $user->addRole($role);
