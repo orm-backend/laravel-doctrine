@@ -23,7 +23,7 @@ class Uploader
      */
     static public function storeImage($file, string $input, array $options = [])
     {
-        $path = config('itaces.upload.img');
+        $path = config('ormbackend.upload.img');
 
         return self::storeFile($file, $path, $input, $options);
     }
@@ -37,7 +37,7 @@ class Uploader
      */
     static public function storeDocument($file, string $input, array $options = [])
     {
-        $path = config('itaces.upload.doc');
+        $path = config('ormbackend.upload.doc');
         
         return self::storeFile($file, $path, $input, $options);
     }

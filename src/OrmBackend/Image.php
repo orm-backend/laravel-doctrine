@@ -46,7 +46,7 @@ class Image
 
     static public function cachePath(string $path, $mode, int $width, int $height)
     {
-        return config('itaces.upload.cache') . "/{$mode}/{$width}x{$height}" . self::hashed($path);
+        return config('ormbackend.upload.cache') . "/{$mode}/{$width}x{$height}" . self::hashed($path);
     }
 
     static public function hashed($path)

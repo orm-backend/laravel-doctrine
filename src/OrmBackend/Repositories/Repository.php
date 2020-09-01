@@ -115,7 +115,7 @@ class Repository
         $entity = $this->findOrFail($class, $id);
         Gate::authorize('delete-record', $entity);
         
-        if (($entity instanceof SoftDeleteable) && config('itaces.softdelete', true)) {
+        if (($entity instanceof SoftDeleteable) && config('ormbackend.softdelete', true)) {
             /**
              *
              * @var \OrmBackend\SoftDeleteable $object
@@ -536,7 +536,7 @@ class Repository
          */
         if ($query->getAST()->whereClause) {
             if ($this->cacheable) {
-                $query->enableResultCache(config('itaces.caches.result_ttl', 120));
+                $query->enableResultCache(config('ormbackend.caches.result_ttl', 120));
             }
         } else if ($this->em->getConfiguration()->isSecondLevelCacheEnabled() && $this->em->getClassMetadata($className)->cache) {
             $query->setLifetime( $this->em->getConfiguration()->getSecondLevelCacheConfiguration()->getRegionsConfiguration()->getDefaultLifetime() );

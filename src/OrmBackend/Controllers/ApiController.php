@@ -23,7 +23,7 @@ class ApiController
     
     public function __construct()
     {
-        $this->adapters = config('itaces.adapters');
+        $this->adapters = config('ormbackend.adapters');
         $this->jsonCRUDController = new JsonCRUDController(true);
     }
     

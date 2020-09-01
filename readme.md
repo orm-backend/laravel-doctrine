@@ -4,7 +4,7 @@
 
 ## I. Json-like query building parameters
 
-Without any additional funds allows you to convert:
+The code allows you to convert without additional tools:
 
 1. From request parameters -- native **PHP**
 2. To request parameters -- http\_build\_query (built-in function) **PHP**
@@ -13,9 +13,9 @@ Without any additional funds allows you to convert:
 5. From request parameters -- jQuery.deparam **JS** (unfortunately plugin) 
 6. To request parameters -- jQuery.param **JS**
 
-HTTP request can be made by any method (GET, POST, PUT и т. д.).
+HTTP request can be of any method (GET, POST, PUT и т. д.).
 
-An example of creating a database query: 
+An example of the database query creation: 
 
 ```PHP
 [
@@ -73,12 +73,12 @@ WHERE (
 ) AND user.id IN(:id5)
 ```
 
-Automatic generation of LEFT JOIN if necessary, based on parts of select, filter, order. Ability to use aliases, DQL expressions (only on the server side). Available operators: eq neq gt gte lt lte isNull isNotNull like notLike in notIn between  
-The grouping and everything connected with it were not realized intentionally Based on the fact that all statistical queries will be encoded by the developer independently.
+Automatic LEFT JOIN generation based on parts of select, filter, order. Ability to use aliases, DQL expressions (only on the server side). Available operators: eq neq gt gte lt lte isNull isNotNull like notLike in notIn between  
+Based on the fact that all statistical queries will be coded by the developer independently, the grouping is not implemented.
 
-## II. This universality of the exchange of parameters and the presence of Doctrine mapping made it possible to remove from the controller the validation of relationships between entities, the presence of fields on entities, operators, parameter structures and the clearing of user-entered values ​​with strict typing inside this package.
+## II. Doctrine mappings and the versatility of parameter passing allowed us to move the cheking of fields presence, operators, parameter structures, and clearing user input using strong typing into this package.
 
-To facilitate debugging, a Development Exception is used with a detailed description of the developer error.  
+The Development Exception is used with a detailed description of the developer error to facilitate debugging.
 Validation of user-entered values ​​for editing requests is performed centrally within the model. This makes it possible to guarantee data integrity no matter how they are delivered, whether it be Seeder, Cron, Web, Api or a self-written test script. If you need additional validation of the request, for example, to check the size of the downloaded file, it should be written in the controller.
 
 ## III. Out of the box
@@ -149,7 +149,7 @@ composer require orm-backend/laravel-doctrine
 * Publish User and Role entities with a minimal set of fields. If necessary, change the validation rules and add new fields.
 
 ```BASH
-php artisan vendor:publish --tag="itaces-model"
+php artisan vendor:publish --tag="ormbackend-model"
 
 Copied Directory [/vendor/orm-backend/laravel-doctrine/app/Model] To [/app/Model]
 Publishing complete.
@@ -167,9 +167,9 @@ Publishing complete.
 * Not necessary. Publish the configuration file to edit the settings.
 
 ```BASH
-php artisan vendor:publish --tag="itaces-config"
+php artisan vendor:publish --tag="ormbackend-config"
 
-Copied File [/vendor/orm-backend/laravel-doctrine/config/itaces.php] To [/config/itaces.php]
+Copied File [/vendor/orm-backend/laravel-doctrine/config/ormbackend.php] To [/config/ormbackend.php]
 Publishing complete.
 ```
 
@@ -279,4 +279,4 @@ Database seeding completed successfully.
 
 ## VII. What is next?
 
-This package uses the default implementation of the ACL interface, in which a user with an ID of 1 can do absolutely everything, and everyone else, including unauthorized ones, is allowed to read only. You can create your own implementation of the interface _\OrmBackend\ACL\AccessControl_ and connect it in the itaces.acl configuration. Installing the package [orm-backend/laravel-doctrine-acl](https://github.com/orm-backend/laravel-doctrine-acl/src/master/) will make it possible to save group access rights and redefine them on entities in the database.
+This package uses the default implementation of the ACL interface, in which a user with an ID of 1 can do absolutely everything, and everyone else, including unauthorized ones, is allowed to read only. You can create your own implementation of the interface  _\OrmBackend\ACL\AccessControl_  and connect it in the ormbackend.acl configuration. Installing the package [orm-backend/laravel-doctrine-acl](https://github.com/orm-backend/laravel-doctrine-acl/src/master/) will make it possible to save group access rights and redefine them on entities in the database.

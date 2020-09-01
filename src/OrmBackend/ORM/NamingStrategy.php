@@ -18,7 +18,7 @@ class NamingStrategy extends UnderscoreNamingStrategy
      */
     public function classToTableName($className)
     {
-        return config('itaces.table_prefix', 'd_') . parent::classToTableName($className);
+        return config('ormbackend.table_prefix', 'd_') . parent::classToTableName($className);
     }
     
     /**
@@ -28,7 +28,7 @@ class NamingStrategy extends UnderscoreNamingStrategy
      */
     public function joinTableName($sourceEntity, $targetEntity, $propertyName = null)
     {
-        return config('itaces.table_prefix', 'd_') . parent::joinTableName($sourceEntity, $targetEntity, $propertyName);
+        return config('ormbackend.table_prefix', 'd_') . parent::joinTableName($sourceEntity, $targetEntity, $propertyName);
     }
     
 }

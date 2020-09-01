@@ -76,7 +76,7 @@ class Policies
      */
     public function isAnyRestoringAllowed(?Entity $user, string $classUrlName) : bool
     {
-        return config('itaces.softdelete', true) && ($this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyRestoringAllowed($user, $classUrlName));
+        return config('ormbackend.softdelete', true) && ($this->acl->isSuperAdmin( $user ? $user->getId() : null ) || $this->acl->isAnyRestoringAllowed($user, $classUrlName));
     }
     
     /**
@@ -120,7 +120,7 @@ class Policies
      */
     public function isRestoringAllowed(?Entity $user, Entity $entity) : bool
     {
-        return config('itaces.softdelete', true) && $this->acl->isRestoringAllowed($user, $entity);
+        return config('ormbackend.softdelete', true) && $this->acl->isRestoringAllowed($user, $entity);
     }
     
 }

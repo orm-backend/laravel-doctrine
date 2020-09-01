@@ -39,7 +39,7 @@ class PackageServiceProvider extends ServiceProvider
         $manager->getConfiguration()->setQuoteStrategy(new QuoteStrategy());
         $manager->getConfiguration()->setNamingStrategy(new NamingStrategy());
         
-        if (config('itaces.softdelete', true)) {
+        if (config('ormbackend.softdelete', true)) {
             $manager->getConfiguration()->addFilter('softdelete', SoftDeleteFilter::class);
             $manager->getFilters()->enable('softdelete');
             $manager->getEventManager()->addEventListener(Events::preFlush, app()->make(DoctrineListener::class));
@@ -64,16 +64,16 @@ class PackageServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes.php');
         
         $this->publishes([
-            __DIR__.'/../../config/itaces.php' => config_path('itaces.php'),
-        ], 'itaces-config');
+            __DIR__.'/../../config/ormbackend.php' => config_path('ormbackend.php'),
+        ], 'ormbackend-config');
         
         $this->publishes([
             __DIR__.'/../../app/Model' => app_path('Model'),
-        ], 'itaces-model');
+        ], 'ormbackend-model');
         
 //         $this->publishes([
 //             __DIR__.'/../../database/seeds' => database_path('seeds'),
-//         ], 'itaces-seeds');
+//         ], 'ormbackend-seeds');
         
         Gate::guessPolicyNamesUsing(function ($modelClass) {
             // Turn Off Policy Auto-Discovery
@@ -100,7 +100,7 @@ class PackageServiceProvider extends ServiceProvider
         require_once base_path('vendor') . '/orm-backend/laravel-doctrine/src/functions.php';
         
         $this->mergeConfigFrom(
-            __DIR__.'/../../config/itaces.php', 'itaces'
+            __DIR__.'/../../config/ormbackend.php', 'ormbackend'
         );
         
         $this->addType(Types::TIME_MUTABLE, CarbonTime::class);
@@ -108,7 +108,7 @@ class PackageServiceProvider extends ServiceProvider
         $this->addType(Types::DATETIME_MUTABLE, CarbonDateTime::class);
         $this->addType(Types::DATETIMETZ_MUTABLE, CarbonDateTime::class);
         
-        $this->app->singleton(AccessControl::class, config('itaces.acl'));
+        $this->app->singleton(AccessControl::class, config('ormbackend.acl'));
         $this->app->alias(AccessControl::class, 'acl');
     }
     

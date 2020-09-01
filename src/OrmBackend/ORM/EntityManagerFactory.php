@@ -18,7 +18,7 @@ class EntityManagerFactory extends ManagerFactory
             $configuration->setSecondLevelCacheEnabled(true);
             
             $cacheConfig = $configuration->getSecondLevelCacheConfiguration();
-            $cacheConfig->getRegionsConfiguration()->setDefaultLifetime( config('itaces.caches.second_ttl', 3600) );
+            $cacheConfig->getRegionsConfiguration()->setDefaultLifetime( config('ormbackend.caches.second_ttl', 3600) );
             $cacheConfig->setCacheFactory(
                 new DefaultCacheFactory(
                     $cacheConfig->getRegionsConfiguration(),

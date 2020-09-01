@@ -16,7 +16,7 @@ class UserTableSeeder extends Seeder
     public function run()
     {
         $em = app('em');
-        $role = $em->getRepository(Role::class)->findOneBy(['code' => config('itaces.roles.administrator', 'admin')]);
+        $role = $em->getRepository(Role::class)->findOneBy(['code' => config('ormbackend.roles.administrator', 'admin')]);
         $user = new User();
         $user->setEmail('admin@vvk.com');
         $user->setPassword(Hash::make('doctrine'));

@@ -51,7 +51,7 @@ class DefaultImplementation implements AccessControl
             }
         }
         
-        return $permissions ? $permissions : config('itaces.perms.forbidden');
+        return $permissions ? $permissions : config('ormbackend.perms.forbidden');
     }
 
     /**
@@ -101,10 +101,10 @@ class DefaultImplementation implements AccessControl
      */
     protected function getCreateAccess(string $classUrlName, int $userId = null) : int
     {
-        $bitmask = config('itaces.perms.guest.create') | config('itaces.perms.entity.create');
+        $bitmask = config('ormbackend.perms.guest.create') | config('ormbackend.perms.entity.create');
         $perms = $this->permissions($classUrlName, $userId);
         
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
+        return ($perms & config('ormbackend.perms.forbidden')) ? 0 : ($perms & $bitmask);
     }
     
     /**
@@ -114,10 +114,10 @@ class DefaultImplementation implements AccessControl
      */
     protected function getReadAccess(string $classUrlName, int $userId = null) : int
     {
-        $bitmask = config('itaces.perms.guest.read') | config('itaces.perms.entity.read') | config('itaces.perms.record.read');
+        $bitmask = config('ormbackend.perms.guest.read') | config('ormbackend.perms.entity.read') | config('ormbackend.perms.record.read');
         $perms = $this->permissions($classUrlName, $userId);
         
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
+        return ($perms & config('ormbackend.perms.forbidden')) ? 0 : ($perms & $bitmask);
     }
     
     /**
@@ -127,10 +127,10 @@ class DefaultImplementation implements AccessControl
      */
     protected function getUpdateAccess(string $classUrlName, int $userId = null) : int
     {
-        $bitmask = config('itaces.perms.guest.update') | config('itaces.perms.entity.update') | config('itaces.perms.record.update');
+        $bitmask = config('ormbackend.perms.guest.update') | config('ormbackend.perms.entity.update') | config('ormbackend.perms.record.update');
         $perms = $this->permissions($classUrlName, $userId);
 
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
+        return ($perms & config('ormbackend.perms.forbidden')) ? 0 : ($perms & $bitmask);
     }
     
     /**
@@ -140,10 +140,10 @@ class DefaultImplementation implements AccessControl
      */
     protected function getDeleteAccess(string $classUrlName, int $userId = null) : int
     {
-        $bitmask = config('itaces.perms.guest.delete') | config('itaces.perms.entity.delete') | config('itaces.perms.record.delete');
+        $bitmask = config('ormbackend.perms.guest.delete') | config('ormbackend.perms.entity.delete') | config('ormbackend.perms.record.delete');
         $perms = $this->permissions($classUrlName, $userId);
         
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
+        return ($perms & config('ormbackend.perms.forbidden')) ? 0 : ($perms & $bitmask);
     }
     
     /**
@@ -153,10 +153,10 @@ class DefaultImplementation implements AccessControl
      */
     protected function getRestoreAccess(string $classUrlName, int $userId = null) : int
     {
-        $bitmask = config('itaces.perms.entity.restore') | config('itaces.perms.record.restore');
+        $bitmask = config('ormbackend.perms.entity.restore') | config('ormbackend.perms.record.restore');
         $perms = $this->permissions($classUrlName, $userId);
         
-        return ($perms & config('itaces.perms.forbidden')) ? 0 : ($perms & $bitmask);
+        return ($perms & config('ormbackend.perms.forbidden')) ? 0 : ($perms & $bitmask);
     }
     
     /**
@@ -169,7 +169,7 @@ class DefaultImplementation implements AccessControl
         $roles = [];
         
         if (!$userId) {
-            $role = $this->em->getRepository(Role::class)->findOneBy(['code' => config('itaces.roles.guest', 'guest')]);
+            $role = $this->em->getRepository(Role::class)->findOneBy(['code' => config('ormbackend.roles.guest', 'guest')]);
             
             if ($role) {
                 $roles[] = $role;
@@ -201,10 +201,10 @@ class DefaultImplementation implements AccessControl
         }
         
         if (!$user) {
-            return (bool) ($permissions & config('itaces.perms.guest.create'));
+            return (bool) ($permissions & config('ormbackend.perms.guest.create'));
         }
         
-        return (bool) ($permissions & config('itaces.perms.entity.create'));
+        return (bool) ($permissions & config('ormbackend.perms.entity.create'));
     }
     
     /**
@@ -222,10 +222,10 @@ class DefaultImplementation implements AccessControl
         }
         
         if (!$user) {
-            return (bool) ($permissions & config('itaces.perms.guest.read'));
+            return (bool) ($permissions & config('ormbackend.perms.guest.read'));
         }
 
-        return ($permissions & config('itaces.perms.entity.read')) || ($permissions & config('itaces.perms.record.read'));
+        return ($permissions & config('ormbackend.perms.entity.read')) || ($permissions & config('ormbackend.perms.record.read'));
     }
     
     /**
@@ -243,10 +243,10 @@ class DefaultImplementation implements AccessControl
         }
         
         if (!$user) {
-            return (bool) ($permissions & config('itaces.perms.guest.update'));
+            return (bool) ($permissions & config('ormbackend.perms.guest.update'));
         }
         
-        return ($permissions & config('itaces.perms.entity.update')) || ($permissions & config('itaces.perms.record.update'));
+        return ($permissions & config('ormbackend.perms.entity.update')) || ($permissions & config('ormbackend.perms.record.update'));
     }
     
     /**
@@ -264,10 +264,10 @@ class DefaultImplementation implements AccessControl
         }
         
         if (!$user) {
-            return (bool) ($permissions & config('itaces.perms.guest.delete'));
+            return (bool) ($permissions & config('ormbackend.perms.guest.delete'));
         }
         
-        return ($permissions & config('itaces.perms.entity.delete')) || ($permissions & config('itaces.perms.record.delete'));
+        return ($permissions & config('ormbackend.perms.entity.delete')) || ($permissions & config('ormbackend.perms.record.delete'));
     }
     
     /**
@@ -285,10 +285,10 @@ class DefaultImplementation implements AccessControl
         }
         
         if (!$user) {
-            return (bool) ($permissions & config('itaces.perms.guest.restore'));
+            return (bool) ($permissions & config('ormbackend.perms.guest.restore'));
         }
         
-        return ($permissions & config('itaces.perms.entity.restore')) || ($permissions & config('itaces.perms.record.restore'));
+        return ($permissions & config('ormbackend.perms.entity.restore')) || ($permissions & config('ormbackend.perms.record.restore'));
     }
     
     /**
@@ -307,14 +307,14 @@ class DefaultImplementation implements AccessControl
         }
         
         if (!$user) {
-            return (bool) ($permissions & config('itaces.perms.guest.read'));
+            return (bool) ($permissions & config('ormbackend.perms.guest.read'));
         }
 
-        if ($permissions & config('itaces.perms.entity.read')) {
+        if ($permissions & config('ormbackend.perms.entity.read')) {
             return true;
         }
         
-        if ($permissions & config('itaces.perms.record.read')) {
+        if ($permissions & config('ormbackend.perms.record.read')) {
             return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
         }
 
@@ -337,14 +337,14 @@ class DefaultImplementation implements AccessControl
         }
         
         if (!$user) {
-            return (bool) ($permissions & config('itaces.perms.guest.update'));
+            return (bool) ($permissions & config('ormbackend.perms.guest.update'));
         }
         
-        if ($permissions & config('itaces.perms.entity.update')) {
+        if ($permissions & config('ormbackend.perms.entity.update')) {
             return true;
         }
         
-        if ($permissions & config('itaces.perms.record.update')) {
+        if ($permissions & config('ormbackend.perms.record.update')) {
             return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
         }
 
@@ -367,14 +367,14 @@ class DefaultImplementation implements AccessControl
         }
         
         if (!$user) {
-            return (bool) ($permissions & config('itaces.perms.guest.delete'));
+            return (bool) ($permissions & config('ormbackend.perms.guest.delete'));
         }
         
-        if ($permissions & config('itaces.perms.entity.delete')) {
+        if ($permissions & config('ormbackend.perms.entity.delete')) {
             return true;
         }
         
-        if ($permissions & config('itaces.perms.record.delete')) {
+        if ($permissions & config('ormbackend.perms.record.delete')) {
             return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
         }
         
@@ -397,14 +397,14 @@ class DefaultImplementation implements AccessControl
         }
         
         if (!$user) {
-            return (bool) ($permissions & config('itaces.perms.guest.restore', 0));
+            return (bool) ($permissions & config('ormbackend.perms.guest.restore', 0));
         }
         
-        if ($permissions & config('itaces.perms.entity.restore')) {
+        if ($permissions & config('ormbackend.perms.entity.restore')) {
             return true;
         }
         
-        if ($permissions & config('itaces.perms.record.restore')) {
+        if ($permissions & config('ormbackend.perms.record.restore')) {
             return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
         }
         
@@ -429,7 +429,7 @@ class DefaultImplementation implements AccessControl
             throw new AuthorizationException();
         }
         
-        if ($permissions === config('itaces.perms.record.read')) {
+        if ($permissions === config('ormbackend.perms.record.read')) {
             $reflectionClass = new \ReflectionClass($class);
             $alias = $alias ? $alias : lcfirst( $reflectionClass->getShortName() );
             
