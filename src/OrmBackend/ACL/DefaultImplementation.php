@@ -193,7 +193,7 @@ class DefaultImplementation implements AccessControl
      */
     public function isAnyCreatingAllowed(?Entity $user, string $classUrlName) : bool
     {
-        $userId = $user ? $user->getId() : null;
+        $userId = $user ? $user->getPrimary() : null;
         $permissions = $this->getCreateAccess($classUrlName, $userId);
         
         if (!$permissions) {
@@ -214,7 +214,7 @@ class DefaultImplementation implements AccessControl
      */
     public function isAnyReadingAllowed(?Entity $user, string $classUrlName) : bool
     {
-        $userId = $user ? $user->getId() : null;
+        $userId = $user ? $user->getPrimary() : null;
         $permissions = $this->getReadAccess($classUrlName, $userId);
         
         if (!$permissions) {
@@ -235,7 +235,7 @@ class DefaultImplementation implements AccessControl
      */
     public function isAnyUpdatingAllowed(?Entity $user, string $classUrlName) : bool
     {
-        $userId = $user ? $user->getId() : null;
+        $userId = $user ? $user->getPrimary() : null;
         $permissions = $this->getUpdateAccess($classUrlName, $userId);
         
         if (!$permissions) {
@@ -256,7 +256,7 @@ class DefaultImplementation implements AccessControl
      */
     public function isAnyDeletingAllowed(?Entity $user, string $classUrlName) : bool
     {
-        $userId = $user ? $user->getId() : null;
+        $userId = $user ? $user->getPrimary() : null;
         $permissions = $this->getDeleteAccess($classUrlName, $userId);
         
         if (!$permissions) {
@@ -277,7 +277,7 @@ class DefaultImplementation implements AccessControl
      */
     public function isAnyRestoringAllowed(?Entity $user, string $classUrlName) : bool
     {
-        $userId = $user ? $user->getId() : null;
+        $userId = $user ? $user->getPrimary() : null;
         $permissions = $this->getRestoreAccess($classUrlName, $userId);
         
         if (!$permissions) {
@@ -298,7 +298,7 @@ class DefaultImplementation implements AccessControl
      */
     public function isReadingAllowed(?Entity $user, Entity $entity) : bool
     {
-        $userId = $user ? $user->getId() : null;
+        $userId = $user ? $user->getPrimary() : null;
         $classUrlName = Helper::classToUrl(get_class($entity));
         $permissions = $this->getReadAccess($classUrlName, $userId);
         
@@ -315,7 +315,7 @@ class DefaultImplementation implements AccessControl
         }
         
         if ($permissions & config('ormbackend.perms.record.read')) {
-            return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
+            return $entity->getCreatedBy() && $entity->getCreatedBy()->getPrimary() === $userId;
         }
 
         return false;
@@ -328,7 +328,7 @@ class DefaultImplementation implements AccessControl
      */
     public function isUpdatingAllowed(?Entity $user, Entity $entity) : bool
     {
-        $userId = $user ? $user->getId() : null;
+        $userId = $user ? $user->getPrimary() : null;
         $classUrlName = Helper::classToUrl(get_class($entity));
         $permissions = $this->getUpdateAccess($classUrlName, $userId);
 
@@ -345,7 +345,7 @@ class DefaultImplementation implements AccessControl
         }
         
         if ($permissions & config('ormbackend.perms.record.update')) {
-            return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
+            return $entity->getCreatedBy() && $entity->getCreatedBy()->getPrimary() === $userId;
         }
 
         return false;
@@ -358,7 +358,7 @@ class DefaultImplementation implements AccessControl
      */
     public function isDeletingAllowed(?Entity $user, Entity $entity) : bool
     {
-        $userId = $user ? $user->getId() : null;
+        $userId = $user ? $user->getPrimary() : null;
         $classUrlName = Helper::classToUrl(get_class($entity));
         $permissions = $this->getDeleteAccess($classUrlName, $userId);
         
@@ -375,7 +375,7 @@ class DefaultImplementation implements AccessControl
         }
         
         if ($permissions & config('ormbackend.perms.record.delete')) {
-            return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
+            return $entity->getCreatedBy() && $entity->getCreatedBy()->getPrimary() === $userId;
         }
         
         return false;
@@ -388,7 +388,7 @@ class DefaultImplementation implements AccessControl
      */
     public function isRestoringAllowed(?Entity $user, Entity $entity) : bool
     {
-        $userId = $user ? $user->getId() : null;
+        $userId = $user ? $user->getPrimary() : null;
         $classUrlName = Helper::classToUrl(get_class($entity));
         $permissions = $this->getRestoreAccess($classUrlName, $userId);
         
@@ -405,7 +405,7 @@ class DefaultImplementation implements AccessControl
         }
         
         if ($permissions & config('ormbackend.perms.record.restore')) {
-            return $entity->getCreatedBy() && $entity->getCreatedBy()->getId() === $userId;
+            return $entity->getCreatedBy() && $entity->getCreatedBy()->getPrimary() === $userId;
         }
         
         return false;
