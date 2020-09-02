@@ -17,6 +17,7 @@ return [
         'app-model-image' => OrmBackend\Adapters\ImageAdapter::class,
     ],
     
+    'acl' => OrmBackend\ACL\DefaultImplementation::class,
     //'acl' => OrmBackend\ACL\ManagedImplementation::class,
     
     'roles' => [
