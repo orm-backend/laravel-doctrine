@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 class DoctrineListener
 {
     public function preFlush(PreFlushEventArgs $event) {
-        if (env('DEMO', false) && Auth::id() != 1) {
+        if (env('DEMO', false) && user()->getPrimary() != 1) {
             throw ValidationException::withMessages(['Data modification is not available in demo mode. This interrupt is triggered from the Doctrine Session PreFlush event.']);
         }
         
