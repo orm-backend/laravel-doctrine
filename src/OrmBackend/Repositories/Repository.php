@@ -108,9 +108,9 @@ class Repository
     /**
      *
      * @param string $class
-     * @param integer $id
+     * @param mixed $id
      */
-    public function delete(string $class, int $id) : void
+    public function delete(string $class, $id) : void
     {
         $entity = $this->findOrFail($class, $id);
         Gate::authorize('delete-record', $entity);
@@ -134,9 +134,9 @@ class Repository
     /**
      *
      * @param string $class
-     * @param integer $id
+     * @param mixed $id
      */
-    public function restore(string $class, int $id) : void
+    public function restore(string $class, $id) : void
     {
         $entity = $this->findOrFail($class, $id);
         Gate::authorize('restore-record', $entity);
@@ -199,16 +199,16 @@ class Repository
      * 
      * @param string $class
      * @param array $data
-     * @param int $id
+     * @param mixed $id
      * @throws DevelopmentException
      * @return \OrmBackend\ORM\Entities\Entity
      */
-    public function createOrUpdate(string $class, array $data, int $id = null) : Entity
+    public function createOrUpdate(string $class, array $data, $id = null) : Entity
     {
         $primaryName = $class::getIdentifierName();
         
         if ($id === null && isset($data[$primaryName])) {
-            $id = (int) $data[$primaryName];
+            $id = $data[$primaryName];
         }
 
         if (array_key_exists($primaryName, $data)) {
@@ -216,10 +216,6 @@ class Repository
         }
 
         if ($id) {
-            if ($id < 1) {
-                abort(400);
-            }
-            
             $entity = $this->findOrFail($class, $id);
             Gate::authorize('update-record', $entity);
         } else {
@@ -400,7 +396,7 @@ class Repository
      * Retrieving an array of objects using the WHERE IN clause.
      * 
      * @param string $class
-     * @param int[] $ids
+     * @param mixed[] $ids
      * @return array
      */
     public function fetchCollection(string $class, array $ids) : array
@@ -489,15 +485,12 @@ class Repository
                     foreach ($value as $association) {
                         if ($association instanceof Entity) {
                             $associations[] = $association;
-                        } else if (is_numeric($association)) {
-                            $id = (int) $association;
-                            
+                        } else if (is_numeric($association) || is_string($association)) {
                             /**
-                             * A multiple select value is not present in the http request unless it has the selected values.
+                             * The multiple select value is not present on http request
+                             * unless it has the selected values.
                              */
-                            if ($id > 0) {
-                                $existing[] = (int) $association;
-                            }
+                            $existing[] = $association;
                         } else {
                             $posted[] = $association;
                         }
