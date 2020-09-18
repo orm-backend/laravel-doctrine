@@ -2,6 +2,8 @@
 
 return [
     
+    'demo' => env('DEMO', true),
+    
     'upload' => [
         'img' => 'images',
         'doc' => 'doc',

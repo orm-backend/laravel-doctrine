@@ -448,19 +448,19 @@ class FieldContainer
             }
             
             if ($association['type'] & ClassMetadataInfo::TO_ONE) {
-                if (!$association['isOwningSide']) {
-                    continue;
-                }
+//                 if (!$association['isOwningSide']) {
+//                     continue;
+//                 }
                 
                 $fields[] = ReferenceField::getInstance($classMetadata, $association['fieldName'], $entity, $index);
             } else if ($association['type'] & ClassMetadataInfo::TO_MANY) {
-                if (!$association['isOwningSide']) {
-                    continue;
-                }
+//                 if (!$association['isOwningSide']) {
+//                     continue;
+//                 }
                 
                 $collectionField = CollectionField::getInstance($classMetadata, $association['fieldName'], $entity, $index);
                 
-                if ($this->fetchAllPosibleCollectionValues) {
+                if ($association['isOwningSide'] && $this->fetchAllPosibleCollectionValues) {
                     $collectionField->fetchAllValues();
                 }
                 

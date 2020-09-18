@@ -34,6 +34,12 @@ class ReferenceField extends MetaField
     
     /**
      * 
+     * @var boolean
+     */
+    public $isOwningSide;
+    
+    /**
+     * 
      * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
      * @param string $fieldName
      * @param \OrmBackend\ORM\Entities\Entity $entity
@@ -46,6 +52,7 @@ class ReferenceField extends MetaField
         $associationMapping = $classMetadata->getAssociationMapping($fieldName);
         $instance->refClassUrlName = Helper::classToUrl($associationMapping['targetEntity']);
         $instance->refClassAlias = lcfirst((new \ReflectionClass($associationMapping['targetEntity']))->getShortName());
+        $instance->isOwningSide = $associationMapping['isOwningSide'];
         
         if ($entity && array_search($fieldName, FieldContainer::FORBIDDEN_FIELDS) === false) {
             /**
@@ -55,7 +62,7 @@ class ReferenceField extends MetaField
             $reference = $classMetadata->getFieldValue($entity, $fieldName);
             
             if ($reference) {
-                $instance->value = $reference->getId();
+                $instance->value = $reference->getPrimary();
                 /**
                  * 
                  * @var \Doctrine\ORM\EntityManager $em

@@ -29,6 +29,12 @@ class CollectionField extends MetaField
      */
     public $refClassAlias;
     
+    /**
+     *
+     * @var boolean
+     */
+    public $isOwningSide;
+    
 //     /**
 //      * 
 //      * @var \stdClass[]
@@ -59,6 +65,7 @@ class CollectionField extends MetaField
         $refClassShortName = (new \ReflectionClass($associationMapping['targetEntity']))->getShortName();
         $instance->refClassAlias = lcfirst($refClassShortName);
         $instance->refClassTitle = __(Str::pluralCamelWords( ucfirst($refClassShortName), 2));
+        $instance->isOwningSide = $associationMapping['isOwningSide'];
         
         /**
          *
@@ -78,7 +85,7 @@ class CollectionField extends MetaField
             if ($collection) {
                 foreach ($collection as $element) {
                     $wrapped = new \stdClass;
-                    $wrapped->id = $element->getId();
+                    $wrapped->id = $element->getPrimary();
                     $wrapped->selected = true;
 
 //                     if ($element instanceof ImageType) {
