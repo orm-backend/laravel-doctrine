@@ -434,7 +434,7 @@ class Repository
         return $parameters;
     }
     
-    protected function initializeEntity(Entity &$entity, array $data) : void
+    public function initializeEntity(Entity &$entity, array $data) : void
     {
         $classMetadata = $this->em->getClassMetadata(get_class($entity));
         
@@ -449,7 +449,7 @@ class Repository
         }
     }
     
-    protected function initializeAssociations(Entity &$entity, array $data) : void
+    public function initializeAssociations(Entity &$entity, array $data) : void
     {
         $classMetadata = $this->em->getClassMetadata(get_class($entity));
 
