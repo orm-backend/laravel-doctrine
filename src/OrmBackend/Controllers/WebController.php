@@ -19,9 +19,9 @@ abstract class WebController extends Controller
      */
     protected $repository;
     
-    public function __construct()
+    public function __construct(bool $cacheable = false)
     {
-        $this->repository = new Repository;
+        $this->repository = new Repository($cacheable);
     }
     
     /**

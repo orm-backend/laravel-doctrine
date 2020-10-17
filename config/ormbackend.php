@@ -4,6 +4,10 @@ return [
     
     'demo' => env('DEMO', true),
     
+    'table_prefix' => 'd_',
+    
+    'api_use_oauth' => false,
+    
     'upload' => [
         'img' => 'images',
         'doc' => 'doc',

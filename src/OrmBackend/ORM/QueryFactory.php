@@ -126,7 +126,7 @@ class QueryFactory
      */
     public static function fromPut(EntityManager $em, string $class, array $additionalParameters = [], string $alias = null) : Query
     {
-        return static::fromJson($em, $class, request()->json(), $additionalParameters, $alias);
+        return static::fromArray($em, $class, array_merge_recursive(request()->json()->all(), $additionalParameters), $alias);
     }
     
 }

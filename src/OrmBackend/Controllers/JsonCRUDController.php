@@ -21,16 +21,16 @@ class JsonCRUDController extends WebController
      */
     protected $class;
     
-    /**
-     *
-     * @var \OrmBackend\Repositories\WithJoinsRepository
-     */
-    protected $withJoins;
+//     /**
+//      *
+//      * @var \OrmBackend\Repositories\WithJoinsRepository
+//      */
+//     protected $withJoins;
     
     public function __construct(bool $cacheable = false)
     {
-        parent::__construct();
-        $this->withJoins = new WithJoinsRepository(true, $cacheable);
+        parent::__construct($cacheable);
+        //$this->withJoins = new WithJoinsRepository(true, $cacheable);
     }
     
     /**
@@ -40,9 +40,9 @@ class JsonCRUDController extends WebController
     */
     public function search(Request $request)
     {
-        $paginator = $this->cursor($this->withJoins->createQuery($this->class))->appends($request->all());
+        $paginator = $this->cursor($this->repository->createQuery($this->class))->appends($request->all());
 
-        return response()->json( new JsonCollectionSerializer($this->withJoins->em(), $paginator), 200);
+        return response()->json( new JsonCollectionSerializer($this->repository->em(), $paginator), 200);
     }
     
     /**
@@ -54,10 +54,10 @@ class JsonCRUDController extends WebController
     {
         $data = $request->json()->all();
         $request->validate($this->class::getRequestValidationRules());
-        $instance = $this->withJoins->createOrUpdate($this->class, $data);
-        $this->withJoins->em()->flush();
+        $instance = $this->repository->createOrUpdate($this->class, $data);
+        $this->repository->em()->flush();
         
-        return response()->json( new JsonSerializer($this->withJoins->em(), $instance), 201);
+        return response()->json( new JsonSerializer($this->repository->em(), $instance), 201);
     }
     
     /**
@@ -67,9 +67,9 @@ class JsonCRUDController extends WebController
      */
     public function read(int $id)
     {
-        $instance = $this->withJoins->findOrFail($this->class, $id);
+        $instance = $this->repository->findOrFail($this->class, $id);
         
-        return response()->json( new JsonSerializer($this->withJoins->em(), $instance), 200);
+        return response()->json( new JsonSerializer($this->repository->em(), $instance), 200);
     }
     
     /**
@@ -82,10 +82,10 @@ class JsonCRUDController extends WebController
     {
         $data = $request->json()->all();
         $request->validate($this->class::getRequestValidationRules());
-        $instance = $this->withJoins->createOrUpdate($this->class, $data, $id);
-        $this->withJoins->em()->flush();
+        $instance = $this->repository->createOrUpdate($this->class, $data, $id);
+        $this->repository->em()->flush();
         
-        return response()->json( new JsonSerializer($this->withJoins->em(), $instance), 200);
+        return response()->json( new JsonSerializer($this->repository->em(), $instance), 200);
     }
     
     /**
