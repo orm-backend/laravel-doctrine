@@ -3,9 +3,9 @@
 namespace OrmBackend\Json;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
-use OrmBackend\ORM\DevelopmentException;
 use OrmBackend\ORM\Entities\Entity;
 use JsonSerializable;
 
@@ -65,14 +65,13 @@ class JsonSerializer implements JsonSerializable
     static public function toJson(Entity $entity, ClassMetadata $classMetadata, array $additional = [])
     {
         $object = new \stdClass;
-        $className = get_class($entity);
-        $reflectionClass = new \ReflectionClass($className);
-        $additional = array_merge($additional, $className::$additional ?? []);
+        $em = app('em');
+        $className = $classMetadata->name;
         $hidden = $className::$hidden ?? [];
         
         foreach ($classMetadata->fieldMappings as $fieldMapping) {
             $fieldName = $fieldMapping['fieldName'];
-            
+
             if (in_array($fieldName, $hidden)) {
                 continue;
             }
@@ -80,14 +79,41 @@ class JsonSerializer implements JsonSerializable
             $object->{$fieldName} = $classMetadata->getFieldValue($entity, $fieldName);
         }
         
-        foreach ($additional as $methodName) {
-            $method = $reflectionClass->getMethod($methodName);
+        foreach ($classMetadata->associationMappings as $associationMapping) {
+            $fieldName = $associationMapping['fieldName'];
+            $targetMetadata = $em->getClassMetadata($associationMapping['targetEntity']);
             
-            if (!$method) {
-                throw new DevelopmentException("No such method '{$methodName}' on entity '{$className}'.");
+            if (in_array($fieldName, $hidden)) {
+                continue;
             }
             
-            $object->{$methodName} = $method->invoke($entity);
+            if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
+                /**
+                 * @var \Doctrine\ORM\PersistentCollection $entities
+                 */
+                $collection = $classMetadata->getFieldValue($entity, $fieldName);
+                
+                if ($collection instanceof PersistentCollection) {
+                    if (!$collection->isInitialized()) {
+                        $object->{$fieldName} = [];
+                        continue;
+                    }
+                }
+                
+                if (!$collection) {
+                    $object->{$fieldName} = [];
+                } else {
+                    $object->{$fieldName} = JsonCollectionSerializer::toJson($collection, $targetMetadata);
+                }
+            } else if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
+                $association = $classMetadata->getFieldValue($entity, $fieldName);
+                
+                if (!$association) {
+                    $object->{$fieldName} = null;
+                } else {
+                    $object->{$fieldName} = static::toJson($association, $targetMetadata);
+                }
+            }
         }
         
         return $object;
@@ -102,39 +128,7 @@ class JsonSerializer implements JsonSerializable
     {
         $className = get_class($this->entity);
         $classMetadata = $this->em->getClassMetadata($className);
-        $object = static::toJson($this->entity, $classMetadata, $this->additional);
-        $reflectionClass = new \ReflectionClass($className);
-        $propertyHidden = $reflectionClass->hasProperty('hidden') ? $reflectionClass->getProperty('hidden') : null;
-        $isHiddens = $propertyHidden && $propertyHidden->isStatic() && $propertyHidden->isPublic() && is_array($className::$hidden);
-        
-        foreach ($this->classMetadata->associationMappings as $associationMapping) {
-            $fieldName = $associationMapping['fieldName'];
-            $targetMetadata = $this->em->getClassMetadata($associationMapping['targetEntity']);
-            
-            if ($isHiddens && array_search($fieldName, $className::$hidden) !== false) {
-                continue;
-            }
-            
-            if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
-                $entities = $this->classMetadata->getFieldValue($this->entity, $fieldName);
-                
-                if (!$entities) {
-                    $object->{$fieldName} = [];
-                } else {
-                    $object->{$fieldName} = JsonCollectionSerializer::toJson($entities, $targetMetadata);
-                }
-            } else if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
-                $entity = $this->classMetadata->getFieldValue($this->entity, $fieldName);
-                
-                if (!$entity) {
-                    $object->{$fieldName} = null;
-                } else {
-                    $object->{$fieldName} = static::toJson($entity, $targetMetadata);
-                }
-            }
-        }
-
-        return $object;
+        return static::toJson($this->entity, $classMetadata, $this->additional);
     }
 
 }
