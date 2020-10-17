@@ -8,28 +8,29 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use OrmBackend\ORM\Entities\Entity;
 use JsonSerializable;
+use Doctrine\Persistence\Proxy;
 
 /**
- * 
+ *
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
 class JsonSerializer implements JsonSerializable
 {
     /**
-     * 
+     *
      * @var \OrmBackend\ORM\Entities\Entity
      */
     protected $entity;
     
     /**
-     * 
+     *
      * @var \Doctrine\ORM\EntityManager
      */
     protected $em;
     
     /**
-     * 
+     *
      * @var \Doctrine\ORM\Mapping\ClassMetadata
      */
     protected $classMetadata;
@@ -41,7 +42,7 @@ class JsonSerializer implements JsonSerializable
     protected $additional;
     
     /**
-     * 
+     *
      * @param \Doctrine\ORM\EntityManager $em
      * @param \OrmBackend\ORM\Entities\Entity $entity
      * @param string[] $additional
@@ -55,7 +56,7 @@ class JsonSerializer implements JsonSerializable
     }
     
     /**
-     * 
+     *
      * @param \OrmBackend\ORM\Entities\Entity $entity
      * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
      * @param array $additional
@@ -71,7 +72,7 @@ class JsonSerializer implements JsonSerializable
         
         foreach ($classMetadata->fieldMappings as $fieldMapping) {
             $fieldName = $fieldMapping['fieldName'];
-
+            
             if (in_array($fieldName, $hidden)) {
                 continue;
             }
@@ -82,6 +83,10 @@ class JsonSerializer implements JsonSerializable
         foreach ($classMetadata->associationMappings as $associationMapping) {
             $fieldName = $associationMapping['fieldName'];
             $targetMetadata = $em->getClassMetadata($associationMapping['targetEntity']);
+            
+            if (!$associationMapping['isOwningSide']) {
+                continue;
+            }
             
             if (in_array($fieldName, $hidden)) {
                 continue;
@@ -95,7 +100,6 @@ class JsonSerializer implements JsonSerializable
                 
                 if ($collection instanceof PersistentCollection) {
                     if (!$collection->isInitialized()) {
-                        $object->{$fieldName} = [];
                         continue;
                     }
                 }
@@ -107,6 +111,10 @@ class JsonSerializer implements JsonSerializable
                 }
             } else if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
                 $association = $classMetadata->getFieldValue($entity, $fieldName);
+                
+                if ($association instanceof Proxy) {
+                    continue;
+                }
                 
                 if (!$association) {
                     $object->{$fieldName} = null;
@@ -120,7 +128,7 @@ class JsonSerializer implements JsonSerializable
     }
     
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see JsonSerializable::jsonSerialize()
      */
@@ -130,5 +138,5 @@ class JsonSerializer implements JsonSerializable
         $classMetadata = $this->em->getClassMetadata($className);
         return static::toJson($this->entity, $classMetadata, $this->additional);
     }
-
+    
 }
