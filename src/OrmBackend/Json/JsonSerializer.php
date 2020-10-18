@@ -2,13 +2,11 @@
 
 namespace OrmBackend\Json;
 
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\PersistentCollection;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use OrmBackend\ORM\QueryFactory;
 use OrmBackend\ORM\Entities\Entity;
+use OrmBackend\Utility\Helper;
 use JsonSerializable;
-use Doctrine\Persistence\Proxy;
 
 /**
  *
@@ -25,49 +23,27 @@ class JsonSerializer implements JsonSerializable
     
     /**
      *
-     * @var \Doctrine\ORM\EntityManager
-     */
-    protected $em;
-    
-    /**
-     *
-     * @var \Doctrine\ORM\Mapping\ClassMetadata
-     */
-    protected $classMetadata;
-    
-    /**
-     *
-     * @var string[]
-     */
-    protected $additional;
-    
-    /**
-     *
-     * @param \Doctrine\ORM\EntityManager $em
      * @param \OrmBackend\ORM\Entities\Entity $entity
-     * @param string[] $additional
      */
-    public function __construct(EntityManager $em, Entity $entity, array $additional = [])
+    public function __construct(Entity $entity)
     {
-        $this->em = $em;
-        $this->classMetadata = $this->em->getClassMetadata(get_class($entity));
         $this->entity = $entity;
-        $this->additional = $additional;
     }
     
     /**
      *
      * @param \OrmBackend\ORM\Entities\Entity $entity
-     * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
-     * @param array $additional
+     * @param string $path
      * @throws \OrmBackend\ORM\DevelopmentException
      * @return \stdClass
      */
-    static public function toJson(Entity $entity, ClassMetadata $classMetadata, array $additional = [])
+    static public function toJson(Entity $entity, string $path)
     {
         $object = new \stdClass;
         $em = app('em');
-        $className = $classMetadata->name;
+        $select = QueryFactory::lastSelect();
+        $className = get_class($entity);
+        $classMetadata = $em->getClassMetadata($className);
         $hidden = $className::$hidden ?? [];
         
         foreach ($classMetadata->fieldMappings as $fieldMapping) {
@@ -76,50 +52,32 @@ class JsonSerializer implements JsonSerializable
             if (in_array($fieldName, $hidden)) {
                 continue;
             }
-            
+
             $object->{$fieldName} = $classMetadata->getFieldValue($entity, $fieldName);
         }
         
         foreach ($classMetadata->associationMappings as $associationMapping) {
             $fieldName = $associationMapping['fieldName'];
-            $targetMetadata = $em->getClassMetadata($associationMapping['targetEntity']);
             
-            if (!$associationMapping['isOwningSide']) {
-                continue;
-            }
-            
-            if (in_array($fieldName, $hidden)) {
+            if (!in_array($path . '.' . $fieldName, $select)) {
                 continue;
             }
             
             if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
-                /**
-                 * @var \Doctrine\ORM\PersistentCollection $entities
-                 */
                 $collection = $classMetadata->getFieldValue($entity, $fieldName);
-                
-                if ($collection instanceof PersistentCollection) {
-                    if (!$collection->isInitialized()) {
-                        continue;
-                    }
-                }
-                
+
                 if (!$collection) {
                     $object->{$fieldName} = [];
                 } else {
-                    $object->{$fieldName} = JsonCollectionSerializer::toJson($collection, $targetMetadata);
+                    $object->{$fieldName} = JsonCollectionSerializer::toJson($collection, $path . '.' . $fieldName);
                 }
             } else if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
                 $association = $classMetadata->getFieldValue($entity, $fieldName);
-                
-                if ($association instanceof Proxy) {
-                    continue;
-                }
-                
-                if (!$association) {
+
+                if ($association === null) {
                     $object->{$fieldName} = null;
                 } else {
-                    $object->{$fieldName} = static::toJson($association, $targetMetadata);
+                    $object->{$fieldName} = static::toJson($association, $path . '.' . $fieldName);
                 }
             }
         }
@@ -134,9 +92,7 @@ class JsonSerializer implements JsonSerializable
      */
     public function jsonSerialize()
     {
-        $className = get_class($this->entity);
-        $classMetadata = $this->em->getClassMetadata($className);
-        return static::toJson($this->entity, $classMetadata, $this->additional);
+        return static::toJson($this->entity, Helper::aliasFromClass(get_class($this->entity)));
     }
     
 }

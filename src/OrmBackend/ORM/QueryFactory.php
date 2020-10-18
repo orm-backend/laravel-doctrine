@@ -13,6 +13,20 @@ class QueryFactory
 {
     
     /**
+     * @var array
+     */
+    private static $select;
+    
+    /**
+     * 
+     * @return array
+     */
+    public static function lastSelect()
+    {
+        return self::$select;
+    }
+    
+    /**
      *
      * @param \Doctrine\ORM\EntityManager $em
      * @param string $class
@@ -44,6 +58,7 @@ class QueryFactory
         $query->setHelper($helper);
         $query->setValidator(new QueryValidator($qb, $helper, $alias, $class));
         $query->setBuilder(new ParameterBuilder($qb, $helper, $alias, $class));
+        self::$select = $select;
         
         return $query;
     }

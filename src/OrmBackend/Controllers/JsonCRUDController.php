@@ -6,43 +6,37 @@ use Illuminate\Http\Request;
 use OrmBackend\Publishable;
 use OrmBackend\Json\JsonCollectionSerializer;
 use OrmBackend\Json\JsonSerializer;
-use OrmBackend\Repositories\WithJoinsRepository;
+use OrmBackend\Utility\Helper;
 
 /**
- * 
+ *
  * @author Vitaliy Kovalenko vvk@kola.cloud
  *
  */
 class JsonCRUDController extends WebController
 {
     /**
-     * 
+     *
      * @var string
      */
     protected $class;
     
-//     /**
-//      *
-//      * @var \OrmBackend\Repositories\WithJoinsRepository
-//      */
-//     protected $withJoins;
     
     public function __construct(bool $cacheable = false)
     {
         parent::__construct($cacheable);
-        //$this->withJoins = new WithJoinsRepository(true, $cacheable);
     }
     
     /**
-    *
-    * @param  \Illuminate\Http\Request  $request
-    * @return  \Illuminate\Http\JsonResponse
-    */
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return  \Illuminate\Http\JsonResponse
+     */
     public function search(Request $request)
     {
         $paginator = $this->cursor($this->repository->createQuery($this->class))->appends($request->all());
-
-        return response()->json( new JsonCollectionSerializer($this->repository->em(), $paginator), 200);
+        
+        return response()->json( new JsonCollectionSerializer($paginator, Helper::aliasFromClass($this->class)), 200);
     }
     
     /**
@@ -57,7 +51,7 @@ class JsonCRUDController extends WebController
         $instance = $this->repository->createOrUpdate($this->class, $data);
         $this->repository->em()->flush();
         
-        return response()->json( new JsonSerializer($this->repository->em(), $instance), 201);
+        return response()->json( new JsonSerializer($instance), 201);
     }
     
     /**
@@ -69,7 +63,7 @@ class JsonCRUDController extends WebController
     {
         $instance = $this->repository->findOrFail($this->class, $id);
         
-        return response()->json( new JsonSerializer($this->repository->em(), $instance), 200);
+        return response()->json( new JsonSerializer($instance), 200);
     }
     
     /**
@@ -85,7 +79,7 @@ class JsonCRUDController extends WebController
         $instance = $this->repository->createOrUpdate($this->class, $data, $id);
         $this->repository->em()->flush();
         
-        return response()->json( new JsonSerializer($this->repository->em(), $instance), 200);
+        return response()->json( new JsonSerializer($instance), 200);
     }
     
     /**
@@ -102,7 +96,7 @@ class JsonCRUDController extends WebController
     }
     
     /**
-     * 
+     *
      * @param string $class
      * @return \OrmBackend\Controllers\JsonCRUDController
      */
