@@ -52,8 +52,12 @@ class JsonSerializer implements JsonSerializable
             if (in_array($fieldName, $hidden)) {
                 continue;
             }
+            
+            $value = $classMetadata->getFieldValue($entity, $fieldName);
 
-            $object->{$fieldName} = $classMetadata->getFieldValue($entity, $fieldName);
+            if ($value !== null || config('ormbackend.api.serialize_nulls', false)) {
+                $object->{$fieldName} = $value;
+            }
         }
         
         foreach ($classMetadata->associationMappings as $associationMapping) {
@@ -67,7 +71,9 @@ class JsonSerializer implements JsonSerializable
                 $collection = $classMetadata->getFieldValue($entity, $fieldName);
 
                 if (!$collection) {
-                    $object->{$fieldName} = [];
+                    if (config('ormbackend.api.serialize_nulls', false)) {
+                        $object->{$fieldName} = [];
+                    }
                 } else {
                     $object->{$fieldName} = JsonCollectionSerializer::toJson($collection, $path . '.' . $fieldName);
                 }
@@ -75,7 +81,9 @@ class JsonSerializer implements JsonSerializable
                 $association = $classMetadata->getFieldValue($entity, $fieldName);
 
                 if ($association === null) {
-                    $object->{$fieldName} = null;
+                    if (config('ormbackend.api.serialize_nulls', false)) {
+                        $object->{$fieldName} = null;
+                    }
                 } else {
                     $object->{$fieldName} = static::toJson($association, $path . '.' . $fieldName);
                 }

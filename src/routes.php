@@ -13,7 +13,7 @@ Route::group([
 
 $middleware = ['api'];
 
-if (config('ormbackend.api_use_oauth', false)) {
+if (config('ormbackend.api.use_oauth', false)) {
     $middleware[] = 'auth:api';
 }
 

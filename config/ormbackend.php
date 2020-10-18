@@ -6,7 +6,10 @@ return [
     
     'table_prefix' => 'd_',
     
-    'api_use_oauth' => false,
+    'api' => [
+        'use_oauth' => false,
+        'serialize_nulls' => false,
+    ],
     
     'upload' => [
         'img' => 'images',
