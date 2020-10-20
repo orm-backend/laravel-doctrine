@@ -8,20 +8,15 @@ use OrmBackend\Controllers\ApiControllerAdapter;
 use OrmBackend\Controllers\WebController;
 use OrmBackend\Json\JsonCollectionSerializer;
 use OrmBackend\Json\JsonSerializer;
-use OrmBackend\Repositories\WithJoinsRepository;
+use OrmBackend\Repositories\Repository;
 use OrmBackend\Utility\Helper;
 
 class ImageAdapter extends WebController implements ApiControllerAdapter
 {
-    /**
-     *
-     * @var string[]
-     */
-    protected $additional = ['url'];
     
     public function __construct()
     {
-        $this->repository = new WithJoinsRepository(true);
+        $this->repository = new Repository(true);
     }
     
     /**
@@ -34,7 +29,7 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
         $className = Helper::classFromUlr($classUrlName);
         $paginator = $this->cursor($this->repository->createQuery($className))->appends($request->all());
         
-        return response()->json( new JsonCollectionSerializer($this->repository->em(), $paginator, $this->additional), 200);
+        return response()->json( new JsonCollectionSerializer($paginator, Helper::aliasFromClass($className)), 200);
     }
 
     /**
@@ -47,7 +42,7 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
         $className = Helper::classFromUlr($classUrlName);
         $instance = $this->repository->findOrFail($className, $id);
         
-        return response()->json( new JsonSerializer($this->repository->em(), $instance, $this->additional), 200);
+        return response()->json( new JsonSerializer($instance), 200);
     }
 
     /**
@@ -74,7 +69,7 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
         $instance = $this->repository->createOrUpdate($className, $data);
         $this->repository->em()->flush();
         
-        return response()->json( new JsonSerializer($this->repository->em(), $instance, $this->additional), 201);
+        return response()->json( new JsonSerializer($instance), 201);
     }
 
     /**
@@ -104,7 +99,7 @@ class ImageAdapter extends WebController implements ApiControllerAdapter
         $instance = $this->repository->createOrUpdate($className, $data, $id);
         $this->repository->em()->flush();
         
-        return response()->json( new JsonSerializer($this->repository->em(), $instance, $this->additional), 200);
+        return response()->json( new JsonSerializer($instance), 200);
     }
 
     /**
