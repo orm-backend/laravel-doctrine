@@ -27,7 +27,7 @@ class Orderly
             return $value;
         }
 
-        $value = filter_var(trim($value), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | /* FILTER_FLAG_STRIP_HIGH | */ FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_AMP);
+        //$value = filter_var(trim($value), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW | /* FILTER_FLAG_STRIP_HIGH |*/ FILTER_FLAG_STRIP_BACKTICK | FILTER_FLAG_ENCODE_AMP);
 
         if (!array_key_exists('length', $fieldMetadata) || !$fieldMetadata['length']) {
             $fieldMetadata['length'] = self::DEFAULT_STRING_LENGTH;
